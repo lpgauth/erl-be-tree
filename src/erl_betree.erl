@@ -12,9 +12,6 @@
     betree_delete/2
 ]).
 
-%% THIS MODULE SHOULD ONLY BE CALLED FROM erl_betree.erl
-%% OTHERWISE, A CYBER-SHARK MIGHT EAT YOUR ERLANG NODE.
-
 -spec on_load() -> ok.
 
 on_load() ->
