@@ -145,7 +145,7 @@ static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TE
         goto cleanup;
     }
 
-    bool result = betree_insert(sub_id, expr, betree);
+    bool result = betree_insert(betree, sub_id, expr);
     if(result) {
         retval = atom_ok;
     }
@@ -225,7 +225,7 @@ static ERL_NIF_TERM nif_betree_delete(ErlNifEnv* env, int argc, const ERL_NIF_TE
         goto cleanup;
     }
 
-    betree_delete(sub_id, betree);
+    betree_delete(betree, sub_id);
     retval = atom_ok;
 cleanup:
 
