@@ -84,7 +84,7 @@ static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 static char *alloc_string(ErlNifBinary bin)
 {
     size_t key_len = bin.size;
-    char *key = enif_alloc(key_len);
+    char *key = enif_alloc(key_len + 1);
     if (!key) return NULL;
 
     memcpy(key, bin.data, key_len);
