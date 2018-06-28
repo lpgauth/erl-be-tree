@@ -81,9 +81,22 @@ static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     return retval;
 }
 
+static char *alloc_string(ErlNifBinary bin)
+{
+    size_t key_len = bin.size;
+    char *key = enif_alloc(key_len);
+    if (!key) return NULL;
+
+    memcpy(key, bin.data, key_len);
+    key[key_len] = 0;
+
+    return key;
+}
+
 static ERL_NIF_TERM nif_betree_add_domain(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
+    ErlNifBinary bin;
     char* domain = NULL;
     if(argc != 2) {
         retval = enif_make_badarg(env);
@@ -92,15 +105,12 @@ static ERL_NIF_TERM nif_betree_add_domain(ErlNifEnv* env, int argc, const ERL_NI
 
     struct betree* betree = get_betree(env, argv[0]);
 
-    uint32_t len;
-    if(!enif_get_list_length(env, argv[1], &len)) {
+    if (!enif_inspect_binary(env, argv[1], &bin)) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
-
-    domain = enif_alloc(++len);
-    int ret = enif_get_string(env, argv[1], domain, len, ERL_NIF_LATIN1);
-    if(ret < 1) {
+    domain = alloc_string(bin);
+    if (domain == NULL) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
@@ -118,6 +128,7 @@ cleanup:
 static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
+    ErlNifBinary bin;
     char* expr = NULL;
     if(argc != 3) {
         retval = enif_make_badarg(env);
@@ -132,15 +143,12 @@ static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TE
         goto cleanup;
     }
 
-    uint32_t len;
-    if(!enif_get_list_length(env, argv[2], &len)) {
+    if (!enif_inspect_binary(env, argv[2], &bin)) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
-
-    expr = enif_alloc(++len);
-    int ret = enif_get_string(env, argv[2], expr, len, ERL_NIF_LATIN1);
-    if(ret < 1) {
+    expr = alloc_string(bin);
+    if (expr == NULL) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
@@ -163,38 +171,40 @@ cleanup:
 static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
+    ErlNifBinary bin;
     char* event = NULL;
     struct report* report = NULL;
     ERL_NIF_TERM* subs = NULL;
+
     if(argc != 2) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
 
     struct betree* betree = get_betree(env, argv[0]);
-
-    uint32_t len;
-    if(!enif_get_list_length(env, argv[1], &len)) {
+    if(betree == NULL) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
 
-    event = enif_alloc(++len);
-    if(enif_get_string(env, argv[1], event, len, ERL_NIF_LATIN1) <= 0) {
+    if (!enif_inspect_binary(env, argv[1], &bin)) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+    event = alloc_string(bin);
+    if (event == NULL) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
 
     report = make_report();
     betree_search(betree, event, report);
-
     subs = calloc(report->matched, sizeof(*subs));
     for(size_t i = 0; i < report->matched; i++) {
         subs[i] = enif_make_uint64(env, report->subs[i]);
     }
     ERL_NIF_TERM res = enif_make_list_from_array(env, subs, report->matched);
-
-    retval = enif_make_tuple(env, 2, atom_ok, res);
+    retval = enif_make_tuple2(env, atom_ok, res);
 cleanup:
     if(event != NULL) {
         enif_free(event);
@@ -205,7 +215,6 @@ cleanup:
     if(subs != NULL) {
         free(subs);
     }
-
     return retval;
 }
 
