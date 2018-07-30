@@ -135,10 +135,13 @@ static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 static char *alloc_string(ErlNifBinary bin)
 {
     size_t key_len = bin.size;
-    char *key = enif_alloc(key_len + 1);
-    if (!key) return NULL;
+    char *key = calloc(key_len + 1, sizeof(*key));
+    if (!key) {
+        return NULL;
+    }
 
     memcpy(key, bin.data, key_len);
+
     key[key_len] = 0;
 
     return key;
@@ -170,7 +173,7 @@ static ERL_NIF_TERM nif_betree_add_domain(ErlNifEnv* env, int argc, const ERL_NI
     retval = atom_ok;
 cleanup:
     if(domain != NULL) {
-        enif_free(domain);
+        free(domain);
     }
 
     return retval;
@@ -367,7 +370,7 @@ static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TE
     }
 cleanup:
     if(expr != NULL) {
-        enif_free(expr);
+        free(expr);
     }
 
     return retval;
@@ -381,7 +384,7 @@ static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, struct string_value* p
         return false;
     }
 
-    ptr->string = strdup((const char*)bin.data);
+    ptr->string = alloc_string(bin);
 
     return true;
 }
@@ -438,7 +441,7 @@ static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, struct string_list_v
             return false;
         }
 
-        ptr->strings[i].string = strdup((const char*)bin.data);
+        ptr->strings[i].string = alloc_string(bin);
     }
 
     return true;
@@ -493,8 +496,10 @@ static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct frequenc
         return false;
     }
 
-    enum frequency_type_e type = get_type_from_string((const char*)bin.data);
+    char* type_str = alloc_string(bin);
+    enum frequency_type_e type = get_type_from_string(type_str);
     ptr->type = type;
+    free(type_str);
 
     if (!enif_get_uint(env, key_content[1], &(ptr->id))) {
         return false;
@@ -504,7 +509,7 @@ static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct frequenc
         return false;
     }
 
-    ptr->namespace.string = strdup((const char*)bin.data);
+    ptr->namespace.string = alloc_string(bin);
 
     if (!enif_get_uint(env, cap_content[1], &(ptr->value))) {
         return false;
@@ -698,13 +703,9 @@ static ERL_NIF_TERM nif_betree_search_with_term(ErlNifEnv* env, int argc, const 
     }
 
     fill_event(betree->config, event);
-    if(!validate_event(betree->config, event)) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
 
     report = make_report();
-    betree_search_with_event(betree->config, event, betree->cnode, report);
+    betree_search_with_event(betree, event, report);
 
     subs = calloc(report->matched, sizeof(*subs));
     for(size_t i = 0; i < report->matched; i++) {
@@ -764,7 +765,7 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
     retval = enif_make_tuple2(env, atom_ok, res);
 cleanup:
     if(event != NULL) {
-        enif_free(event);
+        free(event);
     }
     if(report != NULL) {
         free_report(report);
