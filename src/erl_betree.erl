@@ -5,7 +5,7 @@
     betree_free/1,
     betree_add_domain/2,
     betree_add_domains/2,
-    betree_insert/3,
+    betree_insert/4,
     betree_search/2,
     betree_search_with_term/2,
     betree_delete/2
@@ -19,8 +19,8 @@ betree_add_domain(Betree, Domain) ->
     erl_betree_nif:betree_add_domain(Betree, Domain).
 betree_add_domains(Betree, Domains)->
     erl_betree_nif:betree_add_domains(Betree, Domains).
-betree_insert(Betree, SubId, Expr) ->
-    erl_betree_nif:betree_insert(Betree, SubId, Expr).
+betree_insert(Betree, SubId, Constants, Expr) ->
+    erl_betree_nif:betree_insert(Betree, SubId, Constants, Expr).
 betree_search(Betree, Event) ->
     erl_betree_nif:betree_search(Betree, Event).
 betree_search_with_term(Betree, Term) ->
