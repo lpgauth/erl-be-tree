@@ -108,7 +108,7 @@ atom_all_search_term_test() ->
              "s = \"good\" and "
              "1 in il and "
              "sl none of (\"good\") and "
-             "segment_within(seg, 1, 20) and ",
+             "segment_within(seg, 1, 20) and "
              "within_frequency_cap(\"flight\", \"ns\", 100, 0)"
            >>,
     Consts = [{flight_id, 10},
