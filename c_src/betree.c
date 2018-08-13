@@ -1,12 +1,10 @@
+#include <float.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "erl_nif.h"
 
 #include "betree.h"
-#include "config.h"
-#include "tree.h"
-#include "value.h"
 
 // return values
 static ERL_NIF_TERM atom_ok;
@@ -184,73 +182,66 @@ static bool add_domains(ErlNifEnv* env, struct betree* betree, ERL_NIF_TERM list
         }
 
         if(enif_is_identical(atom_int, tuple[1]) || enif_is_identical(atom_int64, tuple[1])) {
+            int64_t min = INT64_MIN;
+            int64_t max = INT64_MAX;
             if(tuple_len == 5) {
-                int64_t min, max;
                 if(!enif_get_int64(env, tuple[3], &min) || !enif_get_int64(env, tuple[4], &max)) {
                     return false;
                 }
-                add_attr_domain_bounded_i(betree->config, domain_name, allow_undefined, min, max);
             }
-            else {
-                add_attr_domain_i(betree->config, domain_name, allow_undefined);
-            }
+            betree_add_integer_variable(betree, domain_name, allow_undefined, min, max);
         }
         else if(enif_is_identical(atom_int_list, tuple[1])) {
+            int64_t min = INT64_MIN;
+            int64_t max = INT64_MAX;
             if(tuple_len == 5) {
                 int64_t min, max;
                 if(!enif_get_int64(env, tuple[3], &min) || !enif_get_int64(env, tuple[4], &max)) {
                     return false;
                 }
-                add_attr_domain_bounded_il(betree->config, domain_name, allow_undefined, min, max);
             }
-            else {
-                add_attr_domain_il(betree->config, domain_name, allow_undefined);
-            }
+            betree_add_integer_list_variable(betree, domain_name, allow_undefined, min, max);
         }
         else if(enif_is_identical(atom_bin, tuple[1])) {
+            size_t max = SIZE_MAX;
             if(tuple_len == 4) {
-                uint64_t max;
-                if(!enif_get_uint64(env, tuple[3], &max)) {
+                uint64_t u64_max;
+                if(!enif_get_uint64(env, tuple[3], &u64_max)) {
                     return false;
                 }
-                add_attr_domain_bounded_s(betree->config, domain_name, allow_undefined, max);
+                max = (size_t)u64_max;
             }
-            else {
-                add_attr_domain_s(betree->config, domain_name, allow_undefined);
-            }
+            betree_add_string_variable(betree, domain_name, allow_undefined, max);
         }
         else if(enif_is_identical(atom_bin_list, tuple[1])) {
+            size_t max = SIZE_MAX;
             if(tuple_len == 4) {
-                uint64_t max;
-                if(!enif_get_uint64(env, tuple[3], &max)) {
+                uint64_t u64_max;
+                if(!enif_get_uint64(env, tuple[3], &u64_max)) {
                     return false;
                 }
-                add_attr_domain_bounded_sl(betree->config, domain_name, allow_undefined, max);
+                max = (size_t)u64_max;
             }
-            else {
-                add_attr_domain_sl(betree->config, domain_name, allow_undefined);
-            }
+            betree_add_string_list_variable(betree, domain_name, allow_undefined, max);
         }
         else if(enif_is_identical(atom_bool, tuple[1])) {
-            add_attr_domain_b(betree->config, domain_name, allow_undefined);
+            betree_add_boolean_variable(betree, domain_name, allow_undefined);
         }
         else if(enif_is_identical(atom_float, tuple[1])) {
+            double min = -DBL_MAX;
+            double max = DBL_MAX;
             if(tuple_len == 5) {
-                double min, max;
                 if(!enif_get_double(env, tuple[3], &min) || !enif_get_double(env, tuple[4], &max)) {
                     return false;
                 }
-                add_attr_domain_bounded_f(betree->config, domain_name, allow_undefined, min, max);
             }
-            else {
-                add_attr_domain_f(betree->config, domain_name, allow_undefined);
-            }
+            betree_add_float_variable(betree, domain_name, allow_undefined, min, max);
         }
         else if(enif_is_identical(atom_frequency_caps, tuple[1])) {
-            add_attr_domain_frequency(betree->config, domain_name, allow_undefined);
+            betree_add_frequency_caps_variable(betree, domain_name, allow_undefined);
         }
         else if(enif_is_identical(atom_segments, tuple[1])) {
-            add_attr_domain_segments(betree->config, domain_name, allow_undefined);
+            betree_add_segments_variable(betree, domain_name, allow_undefined);
         }
         else {
             return false;
@@ -394,7 +385,7 @@ cleanup:
     return retval;
 }
 
-static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, struct string_value* ptr)
+static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ErlNifBinary bin;
 
@@ -402,70 +393,93 @@ static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, struct string_value* p
         return false;
     }
 
-    ptr->string = alloc_string(bin);
+    char* value = alloc_string(bin);
+
+    *variable = betree_make_string_variable(name, value);
+
+    free(value);
 
     return true;
 }
 
-static bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, bool *ptr) 
+static bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
 {
+    bool value = false;
     if(enif_is_identical(atom_true, term)) {
-        *ptr = true;
-        return true;
+        value = true;
     }
     else if(enif_is_identical(atom_false, term)) {
-        *ptr = false;
-        return true;
+        value = false;
     }
-    return false;
-}
-
-static bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, int64_t *ptr) 
-{
-    if(!enif_get_int64(env, term, ptr)) {
+    else {
         return false;
     }
+
+    *variable = betree_make_boolean_variable(name, value);
+
     return true;
 }
 
-static bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, double *ptr) 
+static bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
 {
-    if(!enif_get_double(env, term, ptr)) {
+    int64_t value;
+    if(!enif_get_int64(env, term, &value)) {
         return false;
     }
+
+    *variable = betree_make_integer_variable(name, value);
+
     return true;
 }
 
-static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, struct string_list_value *ptr) 
+static bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+{
+    double value;
+    if(!enif_get_double(env, term, &value)) {
+        return false;
+    }
+
+    *variable = betree_make_float_variable(name, value);
+
+    return true;
+}
+
+static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
     ErlNifBinary bin;
+    const char* value;
     unsigned int length;
 
     if (!enif_get_list_length(env, term, &length)) {
         return false;
     }
 
-    ptr->count = length;
-    ptr->strings = calloc(length, sizeof(*ptr->strings));
+    struct betree_string_list* list = betree_make_string_list(length);
 
     for (unsigned int i = 0; i < length; i++) {
         if(!enif_get_list_cell(env, tail, &head, &tail)) {
+            betree_free_string_list(list);
             return false;
         }
 
         if(!enif_inspect_binary(env, head, &bin)) {
+            betree_free_string_list(list);
             return false;
         }
 
-        ptr->strings[i].string = alloc_string(bin);
+        value = alloc_string(bin);
+        betree_add_string(list, i, value);
+        free((char*)value);
     }
+
+    *variable = betree_make_string_list_variable(name, list);
 
     return true;
 }
 
-static bool get_int_list(ErlNifEnv* env, ERL_NIF_TERM term, struct integer_list_value *ptr)
+static bool get_int_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -476,28 +490,34 @@ static bool get_int_list(ErlNifEnv* env, ERL_NIF_TERM term, struct integer_list_
         return false;
     }
 
-    ptr->count = length;
-    ptr->integers = calloc(length, sizeof(*ptr->integers));
+    struct betree_integer_list* list = betree_make_integer_list(length);
 
     for (unsigned int i = 0; i < length; i++) {
         if(!enif_get_list_cell(env, tail, &head, &tail)) {
+            betree_free_integer_list(list);
             return false;
         }
         if (!enif_get_int64(env, head, &value)) {
+            betree_free_integer_list(list);
             return false;
         }
 
-        ptr->integers[i] = value;
+        betree_add_integer(list, i, value);
     }
+
+    *variable = betree_make_integer_list_variable(name, list);
 
     return true;
 }
 
-static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct frequency_cap *ptr) 
+static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_frequency_cap **ptr) 
 {
     int cap_arity;
     int key_arity;
     ErlNifBinary bin;
+    char* type_str = NULL;
+    char* ns_str = NULL;
+    bool success = true;
 
     const ERL_NIF_TERM *cap_content;
     const ERL_NIF_TERM *key_content;
@@ -514,39 +534,53 @@ static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct frequenc
         return false;
     }
 
-    char* type_str = alloc_string(bin);
-    enum frequency_type_e type = get_type_from_string(type_str);
-    ptr->type = type;
-    free(type_str);
+    type_str = alloc_string(bin);
 
-    if (!enif_get_uint(env, key_content[1], &(ptr->id))) {
-        return false;
+    uint32_t id;
+    if (!enif_get_uint(env, key_content[1], &id)) {
+        success = false;
+        goto cleanup;
     }
 
     if (!enif_inspect_binary(env, key_content[2], &bin)) {
-        return false;
+        success = false;
+        goto cleanup;
     }
 
-    ptr->namespace.string = alloc_string(bin);
+    ns_str = alloc_string(bin);
 
-    if (!enif_get_uint(env, cap_content[1], &(ptr->value))) {
-        return false;
+    uint32_t value;
+    if (!enif_get_uint(env, cap_content[1], &value)) {
+        success = false;
+        goto cleanup;
     }
 
+    bool timestamp_defined;
+    int64_t timestamp = 0;
     if(enif_is_identical(atom_undefined, cap_content[2])) {
-        ptr->timestamp_defined = false;
+        timestamp_defined = false;
     }
-    else if (enif_get_int64(env, cap_content[2], &(ptr->timestamp))) {
-        ptr->timestamp_defined = true;
+    else if (enif_get_int64(env, cap_content[2], &timestamp)) {
+        timestamp_defined = true;
     }
     else {
-        return false;
+        success = false;
+        goto cleanup;
     }
 
-    return true;
+    *ptr = betree_make_frequency_cap(type_str, id, ns_str, timestamp_defined, timestamp, value);
+cleanup:
+    if(type_str != NULL) {
+        free(type_str);
+    }
+    if(ns_str != NULL) {
+        free(ns_str);
+    }
+
+    return success;
 }
 
-static bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, struct frequency_caps_list *ptr) 
+static bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -556,22 +590,27 @@ static bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, struct fr
         return false;
     }
 
-    ptr->size = length;
-    ptr->content = calloc(length, sizeof(*ptr->content));
+    struct betree_frequency_caps* list = betree_make_frequency_caps(length);
 
-    for (unsigned int i = 0; i < ptr->size; i++) {
+    for (unsigned int i = 0; i < length; i++) {
         if(!enif_get_list_cell(env, tail, &head, &tail)) {
+            betree_free_frequency_caps(list);
             return false;
         }
-        if(!get_frequency_cap(env, head, &(ptr->content[i]))) {
+        struct betree_frequency_cap* frequency_cap;
+        if(!get_frequency_cap(env, head, &frequency_cap)) {
+            betree_free_frequency_caps(list);
             return false;
         }
+        betree_add_frequency_cap(list, i, frequency_cap);
     }
+
+    *variable = betree_make_frequency_caps_variable(name, list);
 
     return true;
 }
 
-static bool get_segment(ErlNifEnv* env, ERL_NIF_TERM term, struct segment *ptr)
+static bool get_segment(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_segment **ptr)
 {
     int segment_arity;
     const ERL_NIF_TERM *segment_content;
@@ -580,18 +619,22 @@ static bool get_segment(ErlNifEnv* env, ERL_NIF_TERM term, struct segment *ptr)
         return false;
     }
 
-    if (!enif_get_int64(env, segment_content[0], &(ptr->id))) {
+    int64_t id;
+    if (!enif_get_int64(env, segment_content[0], &id)) {
         return false;
     }
 
-    if (!enif_get_int64(env, segment_content[1], &(ptr->timestamp))) {
+    int64_t timestamp;
+    if (!enif_get_int64(env, segment_content[1], &timestamp)) {
         return false;
     }
+
+    *ptr = betree_make_segment(id, timestamp);
 
     return true;
 }
 
-static bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, struct segments_list *ptr) 
+static bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -601,70 +644,75 @@ static bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, struct segments
         return false;
     }
 
-    ptr->size = length;
-    ptr->content = calloc(length, sizeof(*ptr->content));
+    struct betree_segments* list = betree_make_segments(length);
 
-    for (unsigned int i = 0; i < ptr->size; i++) {
+    for (unsigned int i = 0; i < length; i++) {
         if(!enif_get_list_cell(env, tail, &head, &tail)) {
+            betree_free_segments(list);
             return false;
         }
-        if(!get_segment(env, head, &(ptr->content[i]))) {
+        struct betree_segment* segment;
+        if(!get_segment(env, head, &segment)) {
+            betree_free_segments(list);
             return false;
         }
+
+        betree_add_segment(list, i, segment);
     }
+
+    *variable = betree_make_segments_variable(name, list);
 
     return true;
 }
 
-static bool add_preds(ErlNifEnv* env, struct betree* betree, struct event* event, const ERL_NIF_TERM* tuple, int tuple_len, size_t initial_domain_index)
+static bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_event* event, const ERL_NIF_TERM* tuple, int tuple_len, size_t initial_domain_index)
 {
     // Start at 1 to not use the record name
     for(int i = 1; i < tuple_len; i++) {
         ERL_NIF_TERM element = tuple[i];
-        size_t domain_index = initial_domain_index + i - 1;
-        const struct attr_domain* attr_domain = betree->config->attr_domains[domain_index];
-        if(attr_domain->allow_undefined) {
-            if(enif_is_identical(atom_undefined, element)) {
-                continue;
-            }
+        if(enif_is_identical(atom_undefined, element)) {
+            continue;
         }
+        size_t domain_index = initial_domain_index + i - 1;
+        struct betree_variable_definition def = betree_get_variable_definition(betree, domain_index);
         bool result;
-        struct value value;
-        value.value_type = attr_domain->bound.value_type;
-        switch(attr_domain->bound.value_type) {
-            case VALUE_B: 
-                result = get_boolean(env, element, &value.bvalue); 
+        struct betree_variable* variable = NULL;
+        switch(def.type) {
+            case BETREE_BOOLEAN: 
+                result = get_boolean(env, element, def.name, &variable); 
                 break;
-            case VALUE_I:
-                result = get_int(env, element, &value.ivalue);
+            case BETREE_INTEGER:
+                result = get_int(env, element, def.name, &variable);
                 break;
-            case VALUE_F:
-                result = get_float(env, element, &value.fvalue);
+            case BETREE_FLOAT:
+                result = get_float(env, element, def.name, &variable);
                 break;
-            case VALUE_S:
-                result = get_binary(env, element, &value.svalue);
+            case BETREE_STRING:
+                result = get_binary(env, element, def.name, &variable);
                 break;
-            case VALUE_IL:
-                result = get_int_list(env, element, &value.ilvalue);
+            case BETREE_INTEGER_LIST:
+                result = get_int_list(env, element, def.name, &variable);
                 break;
-            case VALUE_SL:
-                result = get_bin_list(env, element, &value.slvalue);
+            case BETREE_STRING_LIST:
+                result = get_bin_list(env, element, def.name, &variable);
                 break;
-            case VALUE_SEGMENTS:
-                result = get_segments_list(env, element, &value.segments_value);
+            case BETREE_SEGMENTS:
+                result = get_segments_list(env, element, def.name, &variable);
                 break;
-            case VALUE_FREQUENCY:
-                result = get_frequency_caps_list(env, element, &value.frequency_value);
+            case BETREE_FREQUENCY_CAPS:
+                result = get_frequency_caps_list(env, element, def.name, &variable);
                 break;
             default: 
                 result = false; 
                 break;
         }
         if(result == false) {
+            if(variable != NULL) {
+                betree_free_variable(variable);
+            }
             return false;
         }
-        struct pred* pred = make_pred(attr_domain->attr_var.attr, attr_domain->attr_var.var, value);
-        event->preds[domain_index] = pred;
+        betree_set_variable(event, domain_index, variable);
     }
     return true;
 }
@@ -674,7 +722,8 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
     ERL_NIF_TERM retval;
     struct report* report = NULL;
     ERL_NIF_TERM* subs = NULL;
-    struct event* event = NULL;
+    size_t pred_index = 0;
+    struct betree_event* event = NULL;
 
     if(argc != 2) {
         retval = enif_make_badarg(env);
@@ -693,17 +742,13 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
         goto cleanup;
     }
 
-    event = make_event();
-    event->pred_count = betree->config->attr_domain_count;
-    event->preds = calloc(event->pred_count, sizeof(*event->preds));
+    event = betree_make_event(betree);
 
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = argv[1];
 
     const ERL_NIF_TERM* tuple;
     int tuple_len;
-
-    size_t pred_index = 0;
 
     for(unsigned int i = 0; i < list_len; i++) {
         if(!enif_get_list_cell(env, tail, &head, &tail)) {
@@ -716,11 +761,12 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
             goto cleanup;
         }
 
-        add_preds(env, betree, event, tuple, tuple_len, pred_index);
+        if(!add_variables(env, betree, event, tuple, tuple_len, pred_index)) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
         pred_index += (tuple_len - 1);
     }
-
-    fill_event(betree->config, event);
 
     report = make_report();
     betree_search_with_event(betree, event, report);
@@ -733,7 +779,7 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
     retval = enif_make_tuple2(env, atom_ok, res);
 cleanup:
     if(event != NULL) {
-        free_event(event);
+        betree_free_event(event);
     }
     if(report != NULL) {
         free_report(report);
