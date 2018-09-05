@@ -157,3 +157,17 @@ constant_test() ->
     ?assertEqual([], Subs),
     ok = erl_betree:betree_free(Betree).
 
+-record(bad_type_test, { bool }).
+bad_type_test() ->
+    Domains = [[
+                {bool, bool, disallow_undefined}
+               ]],
+    Consts = [],
+    Expr = <<"bool">>,
+    Event = [#bad_type_test{bool = 1}],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
+    ?assertError(badarg, erl_betree:betree_search(Betree, Event)),
+    ok = erl_betree:betree_free(Betree).
+
