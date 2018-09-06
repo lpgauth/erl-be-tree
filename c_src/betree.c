@@ -769,7 +769,12 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
     }
 
     report = make_report();
-    betree_search_with_event(betree, event, report);
+    bool result = betree_search_with_event(betree, event, report);
+
+    if(result == false) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
 
     subs = calloc(report->matched, sizeof(*subs));
     for(size_t i = 0; i < report->matched; i++) {

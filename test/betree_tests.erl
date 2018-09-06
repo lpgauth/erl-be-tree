@@ -171,3 +171,37 @@ bad_type_test() ->
     ?assertError(badarg, erl_betree:betree_search(Betree, Event)),
     ok = erl_betree:betree_free(Betree).
 
+-record(bad_frequency_caps, { l }).
+bad_frequency_caps_test() ->
+    Domains = [[
+                {l, frequency_caps, disallow_undefined}
+               ]],
+    Consts = [],
+    Expr = <<"true">>,
+    Event = [#bad_frequency_caps{l = [10]}],
+    %[{Id, [], "true"}], Defs, [#fca_list_rec{l = true}], error),
+    %[{Id, [], "true"}], Defs, [#fca_list_rec{l = 10}], error),
+    %[{Id, [], "true"}], Defs, [#fca_list_rec{l = 10.0}], error),
+    %[{Id, [], "true"}], Defs, [#fca_list_rec{l = <<"a">>}], error),
+    %[{Id, [], "true"}], Defs, [#fca_list_rec{l = [10]}], error),
+    %[{Id, [], "true"}], Defs, [#fca_list_rec{l = [<<"a">>]}], error)
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
+    ?assertError(badarg, erl_betree:betree_search(Betree, Event)),
+    ok = erl_betree:betree_free(Betree).
+
+-record(handle_undef_in_search, {def}).
+handle_undef_in_search_test() ->
+    Domains = [[
+                {def, int, disallow_undefined}
+               ]],
+    Consts = [],
+    Expr = <<"def = 10">>,
+    Event = [#handle_undef_in_search{}],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
+    ?assertError(badarg, erl_betree:betree_search(Betree, Event)),
+    ok = erl_betree:betree_free(Betree).
+
