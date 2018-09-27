@@ -205,3 +205,53 @@ handle_undef_in_search_test() ->
     ?assertError(badarg, erl_betree:betree_search(Betree, Event)),
     ok = erl_betree:betree_free(Betree).
 
+-record(bug_geo_request,{exchange, member_id, latitude, longitude}).
+-record(bug_geo_impression, {width, height, types}).
+bug_geo_test() ->
+    Domains = [[{exchange, int, disallow_undefined},
+                {member_id, int, disallow_undefined},
+                {latitude, float, allow_undefined},
+                {longitude, float, allow_undefined}],
+               [{width, int, disallow_undefined},
+                {height, int, disallow_undefined},
+                {types, int_list, disallow_undefined}]],
+    Consts = [],
+    Expr1 = <<"(((width is not null and width = 100) and (height is not null and height = 200) " 
+              "and (types is not null and 1 in types) and true and true)) and (((exchange is not null and exchange = 2) " 
+              "and (member_id is not null and member_id = 0) and true))">>,
+    Expr2 = <<"(((width is not null and width = 100) and (height is not null and height = 200) " 
+              "and (types is not null and 1 in types) and true and true)) and (((exchange is not null and exchange = 2) " 
+              "and (member_id is not null and member_id = 0) and true)) and geo_within_radius(100.0, 100.0, 10.0)">>,
+    Event = [#bug_geo_request{exchange = 2, member_id = 0, latitude = 100.0, longitude = 100.0},
+             #bug_geo_impression{width = 100, height = 200, types = [1]}],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr1)),
+    ?assertEqual(ok, erl_betree:betree_insert(Betree, 2, Consts, Expr2)),
+    {ok, Subs} = erl_betree:betree_search(Betree, Event),
+    ?assertEqual([1, 2], lists:sort(Subs)),
+    ok = erl_betree:betree_free(Betree).
+
+-record(multiple,{i}).
+multiple_trees_test() ->
+    Domains = [[{i, int, disallow_undefined}]],
+    Consts = [],
+    Expr1 = <<"i < 5">>,
+    Expr2 = <<"i > 5">>,
+    Event1 = [#multiple{i = 3}],
+    Event2 = [#multiple{i = 8}],
+    {ok, Betree1} = erl_betree:betree_make(),
+    {ok, Betree2} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree1, Domains),
+    ok = erl_betree:betree_add_domains(Betree2, Domains),
+    ok = erl_betree:betree_insert(Betree1, 1, Consts, Expr1),
+    ok = erl_betree:betree_insert(Betree2, 2, Consts, Expr2),
+    ?assertEqual({ok, [1]}, erl_betree:betree_search(Betree1, Event1)),
+    ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree1, Event2)),
+    ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree2, Event1)),
+    ?assertEqual({ok, [2]}, erl_betree:betree_search(Betree2, Event2)),
+    ok = erl_betree:betree_free(Betree2),
+    ?assertEqual({ok, [1]}, erl_betree:betree_search(Betree1, Event1)),
+    ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree1, Event2)),
+    ok = erl_betree:betree_free(Betree1).
+
