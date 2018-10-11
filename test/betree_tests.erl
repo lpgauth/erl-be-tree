@@ -255,3 +255,18 @@ multiple_trees_test() ->
     ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree1, Event2)),
     ok = erl_betree:betree_free(Betree1).
 
+bad_domain_type_test() ->
+    Domains = [[{i1, int, allow_undefined},
+                {i2, innt, allow_undefined},
+                {i3, int, allow_undefined}]],
+    {ok, Betree} = erl_betree:betree_make(),
+    ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)),
+    ok = erl_betree:betree_free(Betree).
+
+bad_domain_undef_test() ->
+    Domains = [[{i1, int, allow_undefined},
+                {i2, int, alloww_undefined},
+                {i3, int, allow_undefined}]],
+    {ok, Betree} = erl_betree:betree_make(),
+    ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)),
+    ok = erl_betree:betree_free(Betree).
