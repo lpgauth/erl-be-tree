@@ -114,7 +114,7 @@ cleanup:
 
 static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    (void)env;(void)argc;(void)argv;
+    (void)argc;(void)argv;
     ERL_NIF_TERM retval;
 
     struct betree** betree_res = enif_alloc_resource(MEM_BETREE, sizeof(*betree_res));
