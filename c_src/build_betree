@@ -5,6 +5,7 @@ if [ ! -d "be-tree" ]; then
     git clone https://github.com/FrankBro/be-tree
     cd be-tree
     make
-    cp build/libbetree.so ../priv
+    mkdir -p ../priv
+    cp build/libbetree.so ../priv/libbetree.so
 fi
 
