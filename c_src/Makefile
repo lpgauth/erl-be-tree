@@ -12,6 +12,9 @@ ERL_INTERFACE_LIB_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~t
 C_SRC_DIR = $(CURDIR)
 C_SRC_OUTPUT ?= $(CURDIR)/../priv/$(PROJECT).so
 
+BETREE_INCLUDE_DIR="../be-tree/src"
+BETREE_LIB_DIR="../be-tree/build"
+
 # C compiler/flags.
 
 CC ?= gcc

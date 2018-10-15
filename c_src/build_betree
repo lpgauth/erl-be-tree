@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+## -*- sh-basic-offset: 2 -*-
+
+if [ ! -d "be-tree" ]; then
+    git clone --quiet https://github.com/FrankBro/be-tree.git
+    cd be-tree
+    make
+    cp build/libbetree.so ../priv
+fi
+
