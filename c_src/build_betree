@@ -7,6 +7,10 @@ if [ ! -d "be-tree" ]; then
     cd be-tree
     make
     mkdir -p ../priv
+    echo "Before cp..."
+    ls build
     cp build/libbetree.so ../priv/libbetree.so
+    echo "After cp..."
+    ls ../priv
 fi
 
