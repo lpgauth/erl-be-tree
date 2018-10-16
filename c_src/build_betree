@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 ## -*- sh-basic-offset: 2 -*-
+set -x
 
 if [ ! -d "be-tree" ]; then
     git clone http://github.com/FrankBro/be-tree
