@@ -6,11 +6,6 @@ if [ ! -d "be-tree" ]; then
     git clone http://github.com/FrankBro/be-tree
     cd be-tree
     make
-    mkdir -p ../priv
-    echo "Before cp..."
-    ls build
-    cp build/libbetree.so ../priv/libbetree.so
-    echo "After cp..."
-    ls ../priv
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"$PWD/build" 
 fi
 
