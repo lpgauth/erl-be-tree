@@ -40,7 +40,7 @@ COMPILE_C = $(c_verbose) $(CC) $(CFLAGS) -c
 
 $(C_SRC_OUTPUT): $(OBJECTS)
 	@mkdir -p $(BASEDIR)/priv/
-	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
+	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT) -Wl,-rpath="$(PWD)/../be-tree/build" 
 
 %.o: %.c
 	$(COMPILE_C) $(OUTPUT_OPTION) $<
