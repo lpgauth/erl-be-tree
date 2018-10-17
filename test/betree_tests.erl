@@ -270,3 +270,4 @@ bad_domain_undef_test() ->
     {ok, Betree} = erl_betree:betree_make(),
     ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)),
     ok = erl_betree:betree_free(Betree).
+
