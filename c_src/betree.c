@@ -1,3 +1,7 @@
+#include <execinfo.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <float.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,7 +38,8 @@ static ERL_NIF_TERM atom_undefined;
 
 static ErlNifResourceType* MEM_BETREE;
 
-static ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
+ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name);
+ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
 {
     ERL_NIF_TERM ret;
 
@@ -44,8 +49,30 @@ static ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
     return enif_make_atom(env, name);
 }
 
-static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
+void handler(int sig);
+void handler(int sig)
 {
+    enum { count = 10 };
+    void *array[count];
+    size_t size;
+
+    // get void*'s for all entries on the stack
+    size = backtrace(array, count);
+
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    exit(1);
+}
+
+int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info);
+int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
+{
+    signal(SIGSEGV, handler);   // install our handler
+
+    char* error = 0xDEADBEEF;
+    char crash = *error;
+
     (void)priv_data;
     (void)load_info;
 
@@ -80,14 +107,16 @@ static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
     return 0;
 }
 
-static struct betree* get_betree(ErlNifEnv* env, const ERL_NIF_TERM term)
+struct betree* get_betree(ErlNifEnv* env, const ERL_NIF_TERM term);
+struct betree* get_betree(ErlNifEnv* env, const ERL_NIF_TERM term)
 {
     struct betree* betree = NULL;
     enif_get_resource(env, term, MEM_BETREE, (void*)&betree);
     return betree;
 }
 
-static ERL_NIF_TERM nif_betree_free(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM nif_betree_free(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM nif_betree_free(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
 
@@ -103,7 +132,8 @@ cleanup:
     return retval;
 }
 
-static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;(void)argv;
     ERL_NIF_TERM retval;
@@ -121,7 +151,8 @@ static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     return retval;
 }
 
-static char *alloc_string(ErlNifBinary bin)
+char *alloc_string(ErlNifBinary bin);
+char *alloc_string(ErlNifBinary bin)
 {
     size_t key_len = bin.size;
     char *key = calloc(key_len + 1, sizeof(*key));
@@ -138,7 +169,8 @@ static char *alloc_string(ErlNifBinary bin)
 
 #define DOMAIN_NAME_LEN 256
 
-static bool add_domains(ErlNifEnv* env, struct betree* betree, ERL_NIF_TERM list, unsigned int list_len)
+bool add_domains(ErlNifEnv* env, struct betree* betree, ERL_NIF_TERM list, unsigned int list_len);
+bool add_domains(ErlNifEnv* env, struct betree* betree, ERL_NIF_TERM list, unsigned int list_len)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = list;
@@ -241,7 +273,8 @@ static bool add_domains(ErlNifEnv* env, struct betree* betree, ERL_NIF_TERM list
     return true;
 }
 
-static ERL_NIF_TERM nif_betree_add_domains(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM nif_betree_add_domains(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM nif_betree_add_domains(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
     if(argc != 2) {
@@ -285,7 +318,8 @@ cleanup:
 
 #define CONSTANT_NAME_LEN 256
 
-static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
     ErlNifBinary bin;
@@ -376,7 +410,8 @@ cleanup:
     return retval;
 }
 
-static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
+bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable);
+bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ErlNifBinary bin;
 
@@ -393,7 +428,8 @@ static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, stru
     return true;
 }
 
-static bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable);
+bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     bool value = false;
     if(enif_is_identical(atom_true, term)) {
@@ -411,7 +447,8 @@ static bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, str
     return true;
 }
 
-static bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable);
+bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     int64_t value;
     if(!enif_get_int64(env, term, &value)) {
@@ -423,7 +460,8 @@ static bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct 
     return true;
 }
 
-static bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable);
+bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
 {
     double value;
     if(!enif_get_double(env, term, &value)) {
@@ -435,7 +473,8 @@ static bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struc
     return true;
 }
 
-static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable);
+bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -470,7 +509,8 @@ static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, st
     return true;
 }
 
-static bool get_int_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
+bool get_int_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable);
+bool get_int_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -501,7 +541,8 @@ static bool get_int_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, st
     return true;
 }
 
-static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_frequency_cap **ptr) 
+bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_frequency_cap **ptr);
+bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_frequency_cap **ptr)
 {
     int cap_arity;
     int key_arity;
@@ -571,7 +612,8 @@ cleanup:
     return success;
 }
 
-static bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable);
+bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -601,7 +643,8 @@ static bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, const cha
     return true;
 }
 
-static bool get_segment(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_segment **ptr)
+bool get_segment(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_segment **ptr);
+bool get_segment(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_segment **ptr)
 {
     int segment_arity;
     const ERL_NIF_TERM *segment_content;
@@ -625,7 +668,8 @@ static bool get_segment(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_segment
     return true;
 }
 
-static bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable);
+bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -656,7 +700,8 @@ static bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* nam
     return true;
 }
 
-static bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_event* event, const ERL_NIF_TERM* tuple, int tuple_len, size_t initial_domain_index)
+bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_event* event, const ERL_NIF_TERM* tuple, int tuple_len, size_t initial_domain_index);
+bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_event* event, const ERL_NIF_TERM* tuple, int tuple_len, size_t initial_domain_index)
 {
     // Start at 1 to not use the record name
     for(int i = 1; i < tuple_len; i++) {
@@ -708,7 +753,8 @@ static bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_e
     return true;
 }
 
-static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
     struct report* report = NULL;
@@ -786,7 +832,8 @@ cleanup:
     return retval;
 }
 
-static ERL_NIF_TERM nif_betree_delete(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+ERL_NIF_TERM nif_betree_delete(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+ERL_NIF_TERM nif_betree_delete(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
     if(argc != 2) {
