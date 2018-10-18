@@ -49,8 +49,8 @@ ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
     return enif_make_atom(env, name);
 }
 
-void handler(int sig);
-void handler(int sig)
+void handler(int signo);
+void handler(int signo)
 {
     enum { count = 10 };
     void *array[count];
@@ -60,7 +60,7 @@ void handler(int sig)
     size = backtrace(array, count);
 
     // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
+    fprintf(stderr, "Error: signal SIGSEGV:\n");
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     exit(1);
 }
@@ -68,7 +68,9 @@ void handler(int sig)
 int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info);
 int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
 {
-    signal(SIGSEGV, handler);   // install our handler
+    struct sigaction psa;
+    psa.sa_handler = handler;
+    sigaction(SIGSEGV, &psa, NULL);
 
     (void)priv_data;
     (void)load_info;
