@@ -70,9 +70,6 @@ int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
 {
     signal(SIGSEGV, handler);   // install our handler
 
-    char* error = 0xDEADBEEF;
-    char crash = *error;
-
     (void)priv_data;
     (void)load_info;
 
