@@ -102,8 +102,6 @@ static ERL_NIF_TERM nif_betree_free(ErlNifEnv* env, int argc, const ERL_NIF_TERM
         goto cleanup;
     }
 
-    enif_release_resource(MEM_BETREE);
-
     retval = atom_ok;
 cleanup:
     return retval;
