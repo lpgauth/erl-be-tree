@@ -44,6 +44,12 @@ static ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
     return enif_make_atom(env, name);
 }
 
+static void cleanup(ErlNifEnv* env, void* obj)
+{
+    struct betree* betree = obj;
+    betree_deinit(betree);
+}
+
 static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
 {
     (void)priv_data;
@@ -72,7 +78,7 @@ static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
     atom_undefined = make_atom(env, "undefined");
 
     int flags = ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER;
-    MEM_BETREE = enif_open_resource_type(env, NULL, "betree", NULL, flags, NULL);
+    MEM_BETREE = enif_open_resource_type(env, NULL, "betree", cleanup, flags, NULL);
     if (MEM_BETREE == NULL) {
         return -1;
     }
@@ -108,14 +114,12 @@ static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     (void)argc;(void)argv;
     ERL_NIF_TERM retval;
 
-    struct betree* betree_res = enif_alloc_resource(MEM_BETREE, sizeof(*betree_res));
+    struct betree* betree = enif_alloc_resource(MEM_BETREE, sizeof(*betree));
+    betree_init(betree);
 
-    struct betree* betree = betree_make();
-    memcpy(betree_res, betree, sizeof(*betree_res));
+    ERL_NIF_TERM term = enif_make_resource(env, betree);
 
-    ERL_NIF_TERM term = enif_make_resource(env, betree_res);
-
-    enif_release_resource(betree_res);
+    enif_release_resource(betree);
 
     retval = enif_make_tuple(env, 2, atom_ok, term);
     return retval;
