@@ -271,3 +271,46 @@ bad_domain_undef_test() ->
     ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)),
     ok = erl_betree:betree_free(Betree).
 
+out_of_bound_integer_expression_test() ->
+    Domains = [[{i, int, allow_undefined, 0, 10}]],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    ok = erl_betree:betree_insert(Betree, 1, [], <<"i > 12">>),
+    Event = [#multiple{i = 15}],
+    {ok, [1]} = erl_betree:betree_search(Betree, Event),
+    ok = erl_betree:betree_free(Betree).
+
+change_boundaries_test() ->
+    Expr1 = <<"i = 1">>,
+    Expr2 = <<"i = 2">>,
+    Expr3 = <<"i = 3">>,
+    Expr4 = <<"i = 4">>,
+    Expr5 = <<"i = 5">>,
+    Domains = [[{i, int, disallow_undefined}]],
+    Event = [#multiple{i = 2}],
+
+    {ok, Betree1} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree1, Domains),
+    ok = erl_betree:betree_insert(Betree1, 1, [], Expr1),
+    ok = erl_betree:betree_insert(Betree1, 2, [], Expr2),
+    ok = erl_betree:betree_insert(Betree1, 3, [], Expr3),
+    ok = erl_betree:betree_insert(Betree1, 4, [], Expr4),
+    ok = erl_betree:betree_insert(Betree1, 5, [], Expr5),
+    {ok, [2]} = erl_betree:betree_search(Betree1, Event),
+    ok = erl_betree:betree_free(Betree1),
+
+    {ok, Betree2} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree2, Domains),
+    ok = erl_betree:betree_change_boundaries(Betree2, Expr1),
+    ok = erl_betree:betree_change_boundaries(Betree2, Expr2),
+    ok = erl_betree:betree_change_boundaries(Betree2, Expr3),
+    ok = erl_betree:betree_change_boundaries(Betree2, Expr4),
+    ok = erl_betree:betree_change_boundaries(Betree2, Expr5),
+    ok = erl_betree:betree_insert(Betree2, 1, [], Expr1),
+    ok = erl_betree:betree_insert(Betree2, 2, [], Expr2),
+    ok = erl_betree:betree_insert(Betree2, 3, [], Expr3),
+    ok = erl_betree:betree_insert(Betree2, 4, [], Expr4),
+    ok = erl_betree:betree_insert(Betree2, 5, [], Expr5),
+    {ok, [2]} = erl_betree:betree_search(Betree2, Event),
+    ok = erl_betree:betree_free(Betree2).
+

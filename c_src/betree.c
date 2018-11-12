@@ -811,6 +811,42 @@ cleanup:
     return retval;
 }
 
+static ERL_NIF_TERM nif_betree_change_boundaries(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM retval;
+    ErlNifBinary bin;
+    char* expr = NULL;
+    if(argc != 2) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    struct betree* betree = get_betree(env, argv[0]);
+
+    if (!enif_inspect_binary(env, argv[1], &bin)) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+    expr = alloc_string(bin);
+    if (expr == NULL) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    bool ret = betree_change_boundaries(betree, expr);
+    if(ret) {
+        retval = atom_ok;
+    }
+    else {
+        retval = atom_error;
+    }
+cleanup:
+    if(expr != NULL) {
+        free(expr);
+    }
+    return retval;
+}
+
 static ErlNifFunc nif_functions[] = {
     {"betree_make", 0, nif_betree_make, 0},
     {"betree_free", 1, nif_betree_free, 0},
@@ -818,6 +854,7 @@ static ErlNifFunc nif_functions[] = {
     {"betree_insert", 4, nif_betree_insert, 0},
     {"betree_search", 2, nif_betree_search, 0},
     {"betree_delete", 2, nif_betree_delete, 0},
+    {"betree_change_boundaries", 2, nif_betree_change_boundaries, 0}
 };
 
 ERL_NIF_INIT(erl_betree_nif, nif_functions, &load, NULL, NULL, NULL);
