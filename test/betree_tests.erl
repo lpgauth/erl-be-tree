@@ -314,3 +314,19 @@ change_boundaries_test() ->
     {ok, [2]} = erl_betree:betree_search(Betree2, Event),
     ok = erl_betree:betree_free(Betree2).
 
+-record(list_bug, {il}).
+
+list_bug_test() ->
+    Domains = [[{il, int_list, disallow_undefined, 1, 2}]],
+    Event  = [#list_bug{il = [1,2]}],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    Ids = [1,2,3,4,5],
+    Exprs = [{Id, <<"1 in il">>} || Id <- Ids],
+    lists:foreach(fun ({Id, Expr}) -> 
+        ok = erl_betree:betree_insert(Betree, Id, [], Expr),
+        ok
+    end, Exprs),
+    {ok, Ids} = erl_betree:betree_search(Betree, Event),
+    ok = erl_betree:betree_free(Betree).
+
