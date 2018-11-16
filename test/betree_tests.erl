@@ -330,3 +330,28 @@ list_bug_test() ->
     {ok, Ids} = erl_betree:betree_search(Betree, Event),
     ok = erl_betree:betree_free(Betree).
 
+-record(int_enum, {i}).
+
+int_enum_test() ->
+    Domains = [[{i, int_enum, disallow_undefined}]],
+    Event = [#int_enum{i = 9}],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    Expr1 = <<"i = 8329">>,
+    Expr2 = <<"i = 9">>,
+    Expr3 = <<"i = 9988767">>,
+    Expr4 = <<"i = 28">>,
+    Expr5 = <<"i = 456">>,
+    ok = erl_betree:betree_change_boundaries(Betree, Expr1),
+    ok = erl_betree:betree_change_boundaries(Betree, Expr2),
+    ok = erl_betree:betree_change_boundaries(Betree, Expr3),
+    ok = erl_betree:betree_change_boundaries(Betree, Expr4),
+    ok = erl_betree:betree_change_boundaries(Betree, Expr5),
+    ok = erl_betree:betree_insert(Betree, 1, [], Expr1),
+    ok = erl_betree:betree_insert(Betree, 2, [], Expr2),
+    ok = erl_betree:betree_insert(Betree, 3, [], Expr3),
+    ok = erl_betree:betree_insert(Betree, 4, [], Expr4),
+    ok = erl_betree:betree_insert(Betree, 5, [], Expr5),
+    {ok, [2]} = erl_betree:betree_search(Betree, Event),
+    ok = erl_betree:betree_free(Betree).
+

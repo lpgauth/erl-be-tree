@@ -15,6 +15,7 @@ static ERL_NIF_TERM atom_bad_event;
 // domain types
 static ERL_NIF_TERM atom_int;
 static ERL_NIF_TERM atom_int_list;
+static ERL_NIF_TERM atom_int_enum;
 static ERL_NIF_TERM atom_bin;
 static ERL_NIF_TERM atom_bin_list;
 static ERL_NIF_TERM atom_bool;
@@ -62,6 +63,7 @@ static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
 
     atom_int = make_atom(env, "int");;
     atom_int_list = make_atom(env, "int_list");
+    atom_int_enum = make_atom(env, "int_enum");
     atom_bin = make_atom(env, "bin");
     atom_bin_list = make_atom(env, "bin_list");
     atom_bool = make_atom(env, "bool");;
@@ -194,6 +196,17 @@ static bool add_domains(ErlNifEnv* env, struct betree* betree, ERL_NIF_TERM list
                 }
             }
             betree_add_integer_list_variable(betree, domain_name, allow_undefined, min, max);
+        }
+        else if(enif_is_identical(atom_int_enum, tuple[1])) {
+            size_t max = SIZE_MAX;
+            if(tuple_len == 4) {
+                uint64_t u64_max;
+                if(!enif_get_uint64(env, tuple[3], &u64_max)) {
+                    return false;
+                }
+                max = (size_t)u64_max;
+            }
+            betree_add_integer_enum_variable(betree, domain_name, allow_undefined, max);
         }
         else if(enif_is_identical(atom_bin, tuple[1])) {
             size_t max = SIZE_MAX;
@@ -695,6 +708,10 @@ static bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_e
             case BETREE_FREQUENCY_CAPS:
                 result = get_frequency_caps_list(env, element, def.name, &variable);
                 break;
+            case BETREE_INTEGER_ENUM:
+                result = get_int(env, element, def.name, &variable);
+                break;
+            case BETREE_INTEGER_LIST_ENUM:
             default: 
                 result = false; 
                 break;
