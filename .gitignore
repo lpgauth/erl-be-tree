@@ -3,3 +3,4 @@ priv/*
 tags
 c_src/*.o
 c_src/compile_commands.json
+be-tree/*
