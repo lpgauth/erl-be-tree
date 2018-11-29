@@ -128,7 +128,7 @@ static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 static char *alloc_string(ErlNifBinary bin)
 {
     size_t key_len = bin.size;
-    char *key = calloc(key_len + 1, sizeof(*key));
+    char *key = enif_alloc((key_len + 1) * sizeof(*key));
     if (!key) {
         return NULL;
     }
@@ -329,7 +329,7 @@ static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TE
         goto cleanup;
     }
 
-    constants = calloc(length, sizeof(*constants));
+    constants = enif_alloc(length * sizeof(*constants));
     constant_count = length;
 
     for (unsigned int i = 0; i < length; i++) {
@@ -382,7 +382,7 @@ static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TE
     }
 cleanup:
     if(expr != NULL) {
-        free(expr);
+        enif_free(expr);
     }
     if(constants != NULL) {
         betree_free_constants(constant_count, constants);
@@ -403,7 +403,7 @@ static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, stru
 
     *variable = betree_make_string_variable(name, value);
 
-    free(value);
+    enif_free(value);
 
     return true;
 }
@@ -477,7 +477,7 @@ static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, st
 
         value = alloc_string(bin);
         betree_add_string(list, i, value);
-        free((char*)value);
+        enif_free((char*)value);
     }
 
     *variable = betree_make_string_list_variable(name, list);
@@ -577,10 +577,10 @@ static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_f
     *ptr = betree_make_frequency_cap(type_str, id, ns_str, timestamp_defined, timestamp, value);
 cleanup:
     if(type_str != NULL) {
-        free(type_str);
+        enif_free(type_str);
     }
     if(ns_str != NULL) {
-        free(ns_str);
+        enif_free(ns_str);
     }
 
     return success;
@@ -731,7 +731,6 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
 {
     ERL_NIF_TERM retval;
     struct report* report = NULL;
-    ERL_NIF_TERM* subs = NULL;
     size_t pred_index = 0;
     struct betree_event* event = NULL;
 
@@ -786,11 +785,13 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
         goto cleanup;
     }
 
-    subs = calloc(report->matched, sizeof(*subs));
-    for(size_t i = 0; i < report->matched; i++) {
-        subs[i] = enif_make_uint64(env, report->subs[i]);
-    }
-    ERL_NIF_TERM res = enif_make_list_from_array(env, subs, report->matched);
+    ERL_NIF_TERM res = enif_make_list(env, 0);
+
+	for (size_t i = report->matched; i;) {
+		i--;
+		res = enif_make_list_cell(env, enif_make_uint64(env, report->subs[i]), res);
+	}
+
     retval = enif_make_tuple2(env, atom_ok, res);
 cleanup:
     if(event != NULL) {
@@ -798,9 +799,6 @@ cleanup:
     }
     if(report != NULL) {
         free_report(report);
-    }
-    if(subs != NULL) {
-        free(subs);
     }
     return retval;
 }
@@ -859,7 +857,7 @@ static ERL_NIF_TERM nif_betree_change_boundaries(ErlNifEnv* env, int argc, const
     }
 cleanup:
     if(expr != NULL) {
-        free(expr);
+        enif_free(expr);
     }
     return retval;
 }

@@ -355,3 +355,21 @@ int_enum_test() ->
     {ok, [2]} = erl_betree:betree_search(Betree, Event),
     ok = erl_betree:betree_free(Betree).
 
+-record(memory, {i}).
+memory_test() ->
+    Domains = [[{i, int, disallow_undefined}]],
+    Event = [#memory{i = 5}],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    Ids = [1,2,3,4,5,6,7,8,9],
+    Exprs = [ {Id, list_to_binary(io_lib:format("i = ~p", [Id]))} || Id <- Ids ],
+    lists:foreach(fun ({_Id, Expr}) -> 
+        erl_betree:betree_change_boundaries(Betree, Expr)
+    end, Exprs),
+    lists:foreach(fun ({Id, Expr}) -> 
+        erl_betree:betree_insert(Betree, Id, [], Expr)
+    end, Exprs),
+    {ok, [5]} = erl_betree:betree_search(Betree, Event),
+    io:format(user, "memory = ~p~n", [erlang:memory()]),
+    ok = erl_betree:betree_free(Betree).
+
