@@ -1,7 +1,7 @@
 erl_betree
 =====
 
-An OTP library
+NIFs for interacting with https://github.com/FrankBro/be-tree
 
 Build
 -----
