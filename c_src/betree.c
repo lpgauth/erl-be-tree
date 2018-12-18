@@ -803,6 +803,67 @@ cleanup:
     return retval;
 }
 
+static ERL_NIF_TERM nif_betree_exists(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM retval;
+    size_t pred_index = 0;
+    struct betree_event* event = NULL;
+
+    if(argc != 2) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    struct betree* betree = get_betree(env, argv[0]);
+    if(betree == NULL) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    unsigned int list_len;
+    if(!enif_get_list_length(env, argv[1], &list_len)) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    event = betree_make_event(betree);
+
+    ERL_NIF_TERM head;
+    ERL_NIF_TERM tail = argv[1];
+
+    const ERL_NIF_TERM* tuple;
+    int tuple_len;
+
+    for(unsigned int i = 0; i < list_len; i++) {
+        if(!enif_get_list_cell(env, tail, &head, &tail)) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
+
+        if(!enif_get_tuple(env, head, &tuple_len, &tuple)) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
+
+        if(!add_variables(env, betree, event, tuple, tuple_len, pred_index)) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
+        pred_index += (tuple_len - 1);
+    }
+
+    bool result = betree_exists_with_event(betree, event);
+
+    ERL_NIF_TERM res = result ? atom_true : atom_false;
+
+    retval = enif_make_tuple2(env, atom_ok, res);
+cleanup:
+    if(event != NULL) {
+        betree_free_event(event);
+    }
+    return retval;
+}
+
 static ERL_NIF_TERM nif_betree_delete(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
@@ -868,6 +929,7 @@ static ErlNifFunc nif_functions[] = {
     {"betree_add_domains", 2, nif_betree_add_domains, 0},
     {"betree_insert", 4, nif_betree_insert, 0},
     {"betree_search", 2, nif_betree_search, 0},
+    {"betree_exists", 2, nif_betree_exists, 0},
     {"betree_delete", 2, nif_betree_delete, 0},
     {"betree_change_boundaries", 2, nif_betree_change_boundaries, 0}
 };

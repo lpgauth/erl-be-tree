@@ -373,3 +373,32 @@ memory_test() ->
     io:format(user, "memory = ~p~n", [erlang:memory()]),
     ok = erl_betree:betree_free(Betree).
 
+-record(exists, {i}).
+exists_test() ->
+    Domains = [[{i, int, disallow_undefined}]],
+    GoodEvent = [#exists{i = 0}],
+    BadEvent = [#exists{i = 1}],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    Exprs = lists:map(fun (I) -> {I, <<"i = 0">>} end, lists:seq(1, 10000)),
+    lists:foreach(fun ({Id, Expr}) -> erl_betree:betree_insert(Betree, Id, [], Expr) end, Exprs),
+    T1 = os:timestamp(),
+    {ok, _Subs} = erl_betree:betree_search(Betree, GoodEvent),
+    T2 = os:timestamp(),
+    D1 = timer:now_diff(T2, T1),
+    T3 = os:timestamp(),
+    {ok, true} = erl_betree:betree_exists(Betree, GoodEvent),
+    T4 = os:timestamp(),
+    D2 = timer:now_diff(T4, T3),
+    ?assertEqual(true, D1 > D2),
+    io:format(user, "good: search = ~p, exists = ~p~n", [D1, D2]),
+    T5 = os:timestamp(),
+    {ok, []} = erl_betree:betree_search(Betree, BadEvent),
+    T6 = os:timestamp(),
+    D3 = timer:now_diff(T6, T5),
+    T7 = os:timestamp(),
+    {ok, false} = erl_betree:betree_exists(Betree, BadEvent),
+    T8 = os:timestamp(),
+    D4 = timer:now_diff(T8, T7),
+    io:format(user, "bad: search = ~p, exists = ~p~n", [D3, D4]),
+    ok = erl_betree:betree_free(Betree).
