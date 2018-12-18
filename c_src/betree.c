@@ -733,9 +733,8 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
     struct report* report = NULL;
     size_t pred_index = 0;
     struct betree_event* event = NULL;
-    betree_sub_t* filter = NULL;
 
-    if(argc != 3) {
+    if(argc != 2) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
@@ -746,34 +745,8 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
         goto cleanup;
     }
 
-    unsigned int filter_len;
-    if(!enif_get_list_length(env, argv[1], &filter_len)) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-
-    filter = enif_alloc(filter_len * sizeof(*filter));
-
-    ERL_NIF_TERM filter_head;
-    ERL_NIF_TERM filter_tail = argv[1];
-
-    for(unsigned int i = 0; i < filter_len; i++) {
-        if(!enif_get_list_cell(env, filter_tail, &filter_head, &filter_tail)) {
-            retval = enif_make_badarg(env);
-            goto cleanup;
-        }
-
-        uint64_t filter_element;
-        if(!enif_get_uint64(env, filter_head, &filter_element)) {
-            retval = enif_make_badarg(env);
-            goto cleanup;
-        }
-
-        filter[i] = filter_element;
-    }
-
     unsigned int list_len;
-    if(!enif_get_list_length(env, argv[2], &list_len)) {
+    if(!enif_get_list_length(env, argv[1], &list_len)) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
@@ -781,7 +754,7 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
     event = betree_make_event(betree);
 
     ERL_NIF_TERM head;
-    ERL_NIF_TERM tail = argv[2];
+    ERL_NIF_TERM tail = argv[1];
 
     const ERL_NIF_TERM* tuple;
     int tuple_len;
@@ -805,7 +778,7 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
     }
 
     report = make_report();
-    bool result = betree_search_with_event(betree, filter_len, filter, event, report);
+    bool result = betree_search_with_event(betree, event, report);
 
     if(result == false) {
         retval = enif_make_badarg(env);
@@ -821,9 +794,6 @@ static ERL_NIF_TERM nif_betree_search(ErlNifEnv* env, int argc, const ERL_NIF_TE
 
     retval = enif_make_tuple2(env, atom_ok, res);
 cleanup:
-    if(filter != NULL) {
-        enif_free(filter);
-    }
     if(event != NULL) {
         betree_free_event(event);
     }
@@ -897,7 +867,7 @@ static ErlNifFunc nif_functions[] = {
     {"betree_free", 1, nif_betree_free, 0},
     {"betree_add_domains", 2, nif_betree_add_domains, 0},
     {"betree_insert", 4, nif_betree_insert, 0},
-    {"betree_search", 3, nif_betree_search, 0},
+    {"betree_search", 2, nif_betree_search, 0},
     {"betree_delete", 2, nif_betree_delete, 0},
     {"betree_change_boundaries", 2, nif_betree_change_boundaries, 0}
 };

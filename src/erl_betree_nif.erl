@@ -8,7 +8,7 @@
     betree_free/1,
     betree_add_domains/2,
     betree_insert/4,
-    betree_search/3,
+    betree_search/2,
     betree_delete/2,
     betree_change_boundaries/2
 ]).
@@ -42,7 +42,7 @@ betree_add_domains(_Betree, _Domains)->
     ?nif_stub.
 betree_insert(_Betree, _SubId, _Constants, _Expr) ->
     ?nif_stub.
-betree_search(_Betree, _Filter, _Event) ->
+betree_search(_Betree, _Event) ->
     ?nif_stub.
 betree_delete(_Betree, _SubId) ->
     ?nif_stub.
