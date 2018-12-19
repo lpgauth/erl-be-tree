@@ -363,7 +363,7 @@ static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TE
         constants[i] = betree_make_integer_constant(constant_name, value);
     }
 
-    if (!enif_inspect_binary(env, argv[3], &bin)) {
+    if(!enif_inspect_iolist_as_binary(env, argv[3], &bin)) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
@@ -899,7 +899,7 @@ static ERL_NIF_TERM nif_betree_change_boundaries(ErlNifEnv* env, int argc, const
 
     struct betree* betree = get_betree(env, argv[0]);
 
-    if (!enif_inspect_binary(env, argv[1], &bin)) {
+    if(!enif_inspect_iolist_as_binary(env, argv[1], &bin)) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }

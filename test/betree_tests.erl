@@ -2,6 +2,17 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-record(iolist_test, { a, b, c }).
+iolist_test() ->
+    Domains = [[{a, int, disallow_undefined}, {b, int, disallow_undefined}, {c, int, disallow_undefined}]],
+    Expr = ["a = ", [integer_to_list(3), [" and b = 6"], <<" and c =">>, [[integer_to_binary(9)]]]],
+    Event = [#iolist_test{ a = 3, b = 6, c = 9 }],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    ok = erl_betree:betree_insert(Betree, 1, [], Expr),
+    {ok, [1]} = erl_betree:betree_search(Betree, Event),
+    ok = erl_betree:betree_free(Betree).
+
 -record(basic_test, { i }).
 basic_test() ->
     Domains = [[{i, int, disallow_undefined, 0, 10}]],
