@@ -34,6 +34,11 @@ static ERL_NIF_TERM atom_false;
 static ERL_NIF_TERM atom_undefined;
 
 static ErlNifResourceType* MEM_BETREE;
+static ErlNifResourceType* MEM_SUB;
+
+struct sub {
+    const struct betree_sub* sub;
+};
 
 static ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
 {
@@ -45,11 +50,12 @@ static ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
     return enif_make_atom(env, name);
 }
 
-static void cleanup(ErlNifEnv* env, void* obj)
+static void cleanup_betree(ErlNifEnv* env, void* obj)
 {
     struct betree* betree = obj;
     betree_deinit(betree);
 }
+
 
 static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
 {
@@ -80,8 +86,13 @@ static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
     atom_undefined = make_atom(env, "undefined");
 
     int flags = ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER;
-    MEM_BETREE = enif_open_resource_type(env, NULL, "betree", cleanup, flags, NULL);
-    if (MEM_BETREE == NULL) {
+    MEM_BETREE = enif_open_resource_type(env, NULL, "betree", cleanup_betree, flags, NULL);
+    if(MEM_BETREE == NULL) {
+        return -1;
+    }
+    // We don't own the betree_sub, betree will free it. No dtor
+    MEM_SUB = enif_open_resource_type(env, NULL, "sub", NULL, flags, NULL);
+    if(MEM_SUB == NULL) {
         return -1;
     }
 
@@ -93,6 +104,13 @@ static struct betree* get_betree(ErlNifEnv* env, const ERL_NIF_TERM term)
     struct betree* betree = NULL;
     enif_get_resource(env, term, MEM_BETREE, (void*)&betree);
     return betree;
+}
+
+static struct sub* get_sub(ErlNifEnv* env, const ERL_NIF_TERM term)
+{
+    struct sub* sub = NULL;
+    enif_get_resource(env, term, MEM_SUB, (void*)&sub);
+    return sub;
 }
 
 static ERL_NIF_TERM nif_betree_free(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -299,6 +317,136 @@ cleanup:
 }
 
 #define CONSTANT_NAME_LEN 256
+
+static ERL_NIF_TERM nif_betree_make_sub(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM retval;
+    ErlNifBinary bin;
+    char* expr = NULL;
+    size_t constant_count = 0;
+    struct betree_constant** constants = NULL;
+    if(argc != 4) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    struct betree* betree = get_betree(env, argv[0]);
+
+    betree_sub_t sub_id;
+    if(!enif_get_uint64(env, argv[1], &sub_id)) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    ERL_NIF_TERM head;
+    ERL_NIF_TERM tail = argv[2];
+    unsigned int length;
+
+    if (!enif_get_list_length(env, argv[2], &length)) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    constants = enif_alloc(length * sizeof(*constants));
+    constant_count = length;
+
+    for (unsigned int i = 0; i < length; i++) {
+        if(!enif_get_list_cell(env, tail, &head, &tail)) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
+        const ERL_NIF_TERM* tuple;
+        int tuple_len;
+
+        if(!enif_get_tuple(env, head, &tuple_len, &tuple)) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
+
+        if(tuple_len != 2) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
+        char constant_name[CONSTANT_NAME_LEN];
+        if(!enif_get_atom(env, tuple[0], constant_name, CONSTANT_NAME_LEN, ERL_NIF_LATIN1)) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
+
+        int64_t value;
+        if(!enif_get_int64(env, tuple[1], &value)) {
+            retval = enif_make_badarg(env);
+            goto cleanup;
+        }
+        constants[i] = betree_make_integer_constant(constant_name, value);
+    }
+
+    if(!enif_inspect_iolist_as_binary(env, argv[3], &bin)) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+    expr = alloc_string(bin);
+    if (expr == NULL) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    const struct betree_sub* betree_sub = betree_make_sub(betree, sub_id, constant_count, (const struct betree_constant**)constants, expr);
+    if(betree_sub == NULL) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    struct sub* sub = enif_alloc_resource(MEM_SUB, sizeof(*sub));
+    sub->sub = betree_sub;
+
+    ERL_NIF_TERM sub_term = enif_make_resource(env, sub);
+
+    enif_release_resource(sub);
+
+    retval = enif_make_tuple(env, 2, atom_ok, sub_term);
+cleanup:
+    if(expr != NULL) {
+        enif_free(expr);
+    }
+    if(constants != NULL) {
+        betree_free_constants(constant_count, constants);
+    }
+
+    return retval;
+}
+
+static ERL_NIF_TERM nif_betree_insert_sub(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM retval;
+
+    if(argc != 2) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    struct betree* betree = get_betree(env, argv[0]);
+    if(betree == NULL) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    struct sub* sub = get_sub(env, argv[1]);
+    if(sub == NULL) {
+        retval = enif_make_badarg(env);
+        goto cleanup;
+    }
+
+    bool result = betree_insert_sub(betree, sub->sub);
+    if(result) {
+        retval = atom_ok;
+    }
+    else {
+        retval = atom_error;
+    }
+cleanup:
+    return retval;
+}
 
 static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -931,7 +1079,9 @@ static ErlNifFunc nif_functions[] = {
     {"betree_search", 2, nif_betree_search, 0},
     {"betree_exists", 2, nif_betree_exists, 0},
     {"betree_delete", 2, nif_betree_delete, 0},
-    {"betree_change_boundaries", 2, nif_betree_change_boundaries, 0}
+    {"betree_change_boundaries", 2, nif_betree_change_boundaries, 0},
+    {"betree_make_sub", 4, nif_betree_make_sub, 0},
+    {"betree_insert_sub", 2, nif_betree_insert_sub, 0}
 };
 
 ERL_NIF_INIT(erl_betree_nif, nif_functions, &load, NULL, NULL, NULL);

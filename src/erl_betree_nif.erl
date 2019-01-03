@@ -11,7 +11,9 @@
     betree_search/2,
     betree_exists/2,
     betree_delete/2,
-    betree_change_boundaries/2
+    betree_change_boundaries/2,
+    betree_make_sub/4,
+    betree_insert_sub/2
 ]).
 
 -spec on_load() -> ok.
@@ -50,5 +52,9 @@ betree_exists(_Betree, _Event) ->
 betree_delete(_Betree, _SubId) ->
     ?nif_stub.
 betree_change_boundaries(_Betree, _Expr) ->
+    ?nif_stub.
+betree_make_sub(_Betree, _SubId, _Constants, _Expr) ->
+    ?nif_stub.
+betree_insert_sub(_Betree, _Sub) ->
     ?nif_stub.
 

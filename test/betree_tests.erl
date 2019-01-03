@@ -413,3 +413,17 @@ exists_test() ->
     D4 = timer:now_diff(T8, T7),
     io:format(user, "bad: search = ~p, exists = ~p~n", [D3, D4]),
     ok = erl_betree:betree_free(Betree).
+
+-record(sub, {i}).
+sub_test() ->
+    Domains = [[{i, int, disallow_undefined}]],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    Id = 0,
+    Expr = <<"i = 0">>,
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
+    Event = [#sub{i = 0}],
+    {ok, [Id]} = erl_betree:betree_search(Betree, Event),
+    ok = erl_betree:betree_free(Betree).
+

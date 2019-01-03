@@ -8,7 +8,9 @@
     betree_search/2,
     betree_exists/2,
     betree_delete/2,
-    betree_change_boundaries/2
+    betree_change_boundaries/2,
+    betree_make_sub/4,
+    betree_insert_sub/2
 ]).
 
 betree_make() ->
@@ -27,4 +29,8 @@ betree_delete(Betree, SubId) ->
     erl_betree_nif:betree_delete(Betree, SubId).
 betree_change_boundaries(Betree, Expr) ->
     erl_betree_nif:betree_change_boundaries(Betree, Expr).
+betree_make_sub(Betree, SubId, Constants, Expr) ->
+    erl_betree_nif:betree_make_sub(Betree, SubId, Constants, Expr).
+betree_insert_sub(Betree, Sub) ->
+    erl_betree_nif:betree_insert_sub(Betree, Sub).
 
