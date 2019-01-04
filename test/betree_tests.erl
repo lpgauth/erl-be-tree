@@ -427,3 +427,20 @@ sub_test() ->
     {ok, [Id]} = erl_betree:betree_search(Betree, Event),
     ok = erl_betree:betree_free(Betree).
 
+-record(freq_bug, {now, frequency_caps}).
+frequency_bug_test() ->
+    Domains = [[{now, int, disallow_undefined}, {frequency_caps, frequency_caps, disallow_undefined}]],
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, Domains),
+    Expr = <<"within_frequency_cap(\"flight:ip\", \"3495614\", 1, 5184000)">>,
+    Consts = [
+        {campaign_id, 50650},
+        {advertiser_id, 6573},
+        {flight_id, 101801}
+    ],
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 0, Consts, Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
+    Event = [#freq_bug{now = 1541704800, frequency_caps = [{{<<"flight:ip">>, 101801, <<"3495614">>}, 1, 1546537569676283}]}],
+    {ok, []} = erl_betree:betree_search(Betree, Event),
+    ok = erl_betree:betree_free(Betree).
+
