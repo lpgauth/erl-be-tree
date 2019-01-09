@@ -17,4 +17,5 @@ TODO
 ----
 
 * Make a method to create betree with domains
+* Create a way to detect if we can just make/insert subs without recreating the tree
 
