@@ -411,6 +411,7 @@ cleanup:
     }
     if(constants != NULL) {
         betree_free_constants(constant_count, constants);
+        enif_free(constants);
     }
 
     return retval;
@@ -534,6 +535,7 @@ cleanup:
     }
     if(constants != NULL) {
         betree_free_constants(constant_count, constants);
+        enif_free(constants);
     }
 
     return retval;
