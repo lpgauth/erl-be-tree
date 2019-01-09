@@ -13,3 +13,8 @@ Test
 
     $ rebar3 eunit
 
+TODO
+----
+
+* Make a method to create betree with domains
+
