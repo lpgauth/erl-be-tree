@@ -44,14 +44,16 @@ static ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
 {
     ERL_NIF_TERM ret;
 
-    if(enif_make_existing_atom(env, name, &ret, ERL_NIF_LATIN1))
+    if(enif_make_existing_atom(env, name, &ret, ERL_NIF_LATIN1)) {
         return ret;
+    }
 
     return enif_make_atom(env, name);
 }
 
 static void cleanup_betree(ErlNifEnv* env, void* obj)
 {
+    (void)env;
     struct betree* betree = obj;
     betree_deinit(betree);
 }
@@ -85,7 +87,7 @@ static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
     atom_false = make_atom(env, "false");
     atom_undefined = make_atom(env, "undefined");
 
-    int flags = ERL_NIF_RT_CREATE | ERL_NIF_RT_TAKEOVER;
+    int flags = (int)((unsigned)ERL_NIF_RT_CREATE | (unsigned)ERL_NIF_RT_TAKEOVER);
     MEM_BETREE = enif_open_resource_type(env, NULL, "betree", cleanup_betree, flags, NULL);
     if(MEM_BETREE == NULL) {
         return -1;
@@ -115,6 +117,7 @@ static struct sub* get_sub(ErlNifEnv* env, const ERL_NIF_TERM term)
 
 static ERL_NIF_TERM nif_betree_free(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
+    (void)argv;
     ERL_NIF_TERM retval;
 
     if(argc != 1) {
@@ -560,6 +563,7 @@ static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, stru
 
 static bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
 {
+    (void)env;
     bool value = false;
     if(enif_is_identical(atom_true, term)) {
         value = true;

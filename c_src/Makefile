@@ -15,6 +15,8 @@ C_SRC_OUTPUT ?= $(CURDIR)/../priv/$(PROJECT).so
 BETREE_INCLUDE_DIR="../be-tree/src"
 BETREE_LIB_DIR="../be-tree/build"
 
+TIDY=clang-tidy
+
 # C compiler/flags.
 
 CC ?= gcc
@@ -48,3 +50,5 @@ $(C_SRC_OUTPUT): $(OBJECTS)
 clean:
 	@rm -f $(C_SRC_OUTPUT) $(OBJECTS)
 
+tidy:
+	$(TIDY) betree.c -checks='*'
