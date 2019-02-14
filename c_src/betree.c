@@ -1018,28 +1018,28 @@ cleanup:
     return retval;
 }
 
-static ERL_NIF_TERM nif_betree_delete(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ERL_NIF_TERM retval;
-    if(argc != 2) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
+/*static ERL_NIF_TERM nif_betree_delete(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])*/
+/*{*/
+    /*ERL_NIF_TERM retval;*/
+    /*if(argc != 2) {*/
+        /*retval = enif_make_badarg(env);*/
+        /*goto cleanup;*/
+    /*}*/
 
-    struct betree* betree = get_betree(env, argv[0]);
+    /*struct betree* betree = get_betree(env, argv[0]);*/
 
-    betree_sub_t sub_id;
-    if(!enif_get_uint64(env, argv[1], &sub_id)) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
+    /*betree_sub_t sub_id;*/
+    /*if(!enif_get_uint64(env, argv[1], &sub_id)) {*/
+        /*retval = enif_make_badarg(env);*/
+        /*goto cleanup;*/
+    /*}*/
 
-    betree_delete(betree, sub_id);
-    retval = atom_ok;
-cleanup:
+    /*betree_delete(betree, sub_id);*/
+    /*retval = atom_ok;*/
+/*cleanup:*/
 
-    return retval;
-}
+    /*return retval;*/
+/*}*/
 
 static ERL_NIF_TERM nif_betree_change_boundaries(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -1084,7 +1084,7 @@ static ErlNifFunc nif_functions[] = {
     {"betree_insert", 4, nif_betree_insert, 0},
     {"betree_search", 2, nif_betree_search, 0},
     {"betree_exists", 2, nif_betree_exists, 0},
-    {"betree_delete", 2, nif_betree_delete, 0},
+    /*{"betree_delete", 2, nif_betree_delete, 0},*/
     {"betree_change_boundaries", 2, nif_betree_change_boundaries, 0},
     {"betree_make_sub", 4, nif_betree_make_sub, 0},
     {"betree_insert_sub", 2, nif_betree_insert_sub, 0}
