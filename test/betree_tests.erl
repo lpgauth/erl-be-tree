@@ -10,8 +10,7 @@ iolist_test() ->
     {ok, Betree} = erl_betree:betree_make(),
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ok = erl_betree:betree_insert(Betree, 1, [], Expr),
-    {ok, [1]} = erl_betree:betree_search(Betree, Event),
-    ok = erl_betree:betree_free(Betree).
+    {ok, [1]} = erl_betree:betree_search(Betree, Event).
 
 -record(basic_test, { i }).
 basic_test() ->
@@ -22,14 +21,12 @@ basic_test() ->
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ok = erl_betree:betree_insert(Betree, 1, [], Expr),
     {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual(Subs, [1]),
-    ok = erl_betree:betree_free(Betree).
+    ?assertEqual(Subs, [1]).
 
 bad_insert_no_domain_test() ->
     Expr = <<"i = 5">>,
     {ok, Betree} = erl_betree:betree_make(),
-    ?assertEqual(error, erl_betree:betree_insert(Betree, 1, [], Expr)),
-    ok = erl_betree:betree_free(Betree).
+    ?assertEqual(error, erl_betree:betree_insert(Betree, 1, [], Expr)).
 
 -record(bad_insert_bounded_string_test, { s }).
 bad_insert_bounded_string_test() ->
@@ -42,8 +39,7 @@ bad_insert_bounded_string_test() ->
     ok = erl_betree:betree_insert(Betree, 1, [], Expr1),
     ?assertEqual(error, erl_betree:betree_insert(Betree, 2, [], Expr2)),
     {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual(Subs, [1]),
-    ok = erl_betree:betree_free(Betree).
+    ?assertEqual(Subs, [1]).
 
 atom_all_domain_types_test() ->
     Domains = [[
@@ -65,8 +61,7 @@ atom_all_domain_types_test() ->
                 {segment2, segments, disallow_undefined}
                ]],
     {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ok = erl_betree:betree_free(Betree).
+    ok = erl_betree:betree_add_domains(Betree, Domains).
 
 -record(single, { a, b }).
 atom_single_domain_list_test() ->
@@ -80,8 +75,7 @@ atom_single_domain_list_test() ->
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, [], Expr)),
     {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([1], Subs),
-    ok = erl_betree:betree_free(Betree).
+    ?assertEqual([1], Subs).
 
 -record(first, { a }).
 -record(second, { b }).
@@ -96,8 +90,7 @@ atom_multiple_domain_list_test() ->
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, [], Expr)),
     {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([1], Subs),
-    ok = erl_betree:betree_free(Betree).
+    ?assertEqual([1], Subs).
 
 -record(all, { b, i, f, s, il, sl, seg, freq, now }).
 atom_all_search_term_test() ->
@@ -142,8 +135,7 @@ atom_all_search_term_test() ->
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
     {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([1], Subs),
-    ok = erl_betree:betree_free(Betree).
+    ?assertEqual([1], Subs).
 
 -record(constant_test, { frequency_caps, now }).
 constant_test() ->
@@ -165,8 +157,7 @@ constant_test() ->
     ?assertEqual(error, erl_betree:betree_insert(Betree, 1, [], Expr)),
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
     {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([], Subs),
-    ok = erl_betree:betree_free(Betree).
+    ?assertEqual([], Subs).
 
 -record(bad_type_test, { bool }).
 bad_type_test() ->
@@ -179,8 +170,7 @@ bad_type_test() ->
     {ok, Betree} = erl_betree:betree_make(),
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
-    ?assertError(badarg, erl_betree:betree_search(Betree, Event)),
-    ok = erl_betree:betree_free(Betree).
+    ?assertError(badarg, erl_betree:betree_search(Betree, Event)).
 
 -record(bad_frequency_caps, { l }).
 bad_frequency_caps_test() ->
@@ -199,8 +189,7 @@ bad_frequency_caps_test() ->
     {ok, Betree} = erl_betree:betree_make(),
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
-    ?assertError(badarg, erl_betree:betree_search(Betree, Event)),
-    ok = erl_betree:betree_free(Betree).
+    ?assertError(badarg, erl_betree:betree_search(Betree, Event)).
 
 -record(handle_undef_in_search, {def}).
 handle_undef_in_search_test() ->
@@ -213,8 +202,7 @@ handle_undef_in_search_test() ->
     {ok, Betree} = erl_betree:betree_make(),
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
-    ?assertError(badarg, erl_betree:betree_search(Betree, Event)),
-    ok = erl_betree:betree_free(Betree).
+    ?assertError(badarg, erl_betree:betree_search(Betree, Event)).
 
 -record(bug_geo_request,{exchange, member_id, latitude, longitude}).
 -record(bug_geo_impression, {width, height, types}).
@@ -240,8 +228,7 @@ bug_geo_test() ->
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr1)),
     ?assertEqual(ok, erl_betree:betree_insert(Betree, 2, Consts, Expr2)),
     {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([1, 2], lists:sort(Subs)),
-    ok = erl_betree:betree_free(Betree).
+    ?assertEqual([1, 2], lists:sort(Subs)).
 
 -record(multiple,{i}).
 multiple_trees_test() ->
@@ -261,26 +248,22 @@ multiple_trees_test() ->
     ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree1, Event2)),
     ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree2, Event1)),
     ?assertEqual({ok, [2]}, erl_betree:betree_search(Betree2, Event2)),
-    ok = erl_betree:betree_free(Betree2),
     ?assertEqual({ok, [1]}, erl_betree:betree_search(Betree1, Event1)),
-    ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree1, Event2)),
-    ok = erl_betree:betree_free(Betree1).
+    ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree1, Event2)).
 
 bad_domain_type_test() ->
     Domains = [[{i1, int, allow_undefined},
                 {i2, innt, allow_undefined},
                 {i3, int, allow_undefined}]],
     {ok, Betree} = erl_betree:betree_make(),
-    ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)),
-    ok = erl_betree:betree_free(Betree).
+    ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)).
 
 bad_domain_undef_test() ->
     Domains = [[{i1, int, allow_undefined},
                 {i2, int, alloww_undefined},
                 {i3, int, allow_undefined}]],
     {ok, Betree} = erl_betree:betree_make(),
-    ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)),
-    ok = erl_betree:betree_free(Betree).
+    ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)).
 
 out_of_bound_integer_expression_test() ->
     Domains = [[{i, int, allow_undefined, 0, 10}]],
@@ -288,8 +271,7 @@ out_of_bound_integer_expression_test() ->
     ok = erl_betree:betree_add_domains(Betree, Domains),
     ok = erl_betree:betree_insert(Betree, 1, [], <<"i > 12">>),
     Event = [#multiple{i = 15}],
-    {ok, [1]} = erl_betree:betree_search(Betree, Event),
-    ok = erl_betree:betree_free(Betree).
+    {ok, [1]} = erl_betree:betree_search(Betree, Event).
 
 change_boundaries_test() ->
     Expr1 = <<"i = 1">>,
@@ -308,7 +290,6 @@ change_boundaries_test() ->
     ok = erl_betree:betree_insert(Betree1, 4, [], Expr4),
     ok = erl_betree:betree_insert(Betree1, 5, [], Expr5),
     {ok, [2]} = erl_betree:betree_search(Betree1, Event),
-    ok = erl_betree:betree_free(Betree1),
 
     {ok, Betree2} = erl_betree:betree_make(),
     ok = erl_betree:betree_add_domains(Betree2, Domains),
@@ -322,8 +303,7 @@ change_boundaries_test() ->
     ok = erl_betree:betree_insert(Betree2, 3, [], Expr3),
     ok = erl_betree:betree_insert(Betree2, 4, [], Expr4),
     ok = erl_betree:betree_insert(Betree2, 5, [], Expr5),
-    {ok, [2]} = erl_betree:betree_search(Betree2, Event),
-    ok = erl_betree:betree_free(Betree2).
+    {ok, [2]} = erl_betree:betree_search(Betree2, Event).
 
 -record(list_bug, {il}).
 
@@ -338,8 +318,7 @@ list_bug_test() ->
         ok = erl_betree:betree_insert(Betree, Id, [], Expr),
         ok
     end, Exprs),
-    {ok, Ids} = erl_betree:betree_search(Betree, Event),
-    ok = erl_betree:betree_free(Betree).
+    {ok, Ids} = erl_betree:betree_search(Betree, Event).
 
 -record(int_enum, {i}).
 
@@ -363,8 +342,7 @@ int_enum_test() ->
     ok = erl_betree:betree_insert(Betree, 3, [], Expr3),
     ok = erl_betree:betree_insert(Betree, 4, [], Expr4),
     ok = erl_betree:betree_insert(Betree, 5, [], Expr5),
-    {ok, [2]} = erl_betree:betree_search(Betree, Event),
-    ok = erl_betree:betree_free(Betree).
+    {ok, [2]} = erl_betree:betree_search(Betree, Event).
 
 -record(memory, {i}).
 memory_test() ->
@@ -381,8 +359,7 @@ memory_test() ->
         erl_betree:betree_insert(Betree, Id, [], Expr)
     end, Exprs),
     {ok, [5]} = erl_betree:betree_search(Betree, Event),
-    io:format(user, "memory = ~p~n", [erlang:memory()]),
-    ok = erl_betree:betree_free(Betree).
+    io:format(user, "memory = ~p~n", [erlang:memory()]).
 
 -record(exists, {i}).
 exists_test() ->
@@ -411,8 +388,7 @@ exists_test() ->
     {ok, false} = erl_betree:betree_exists(Betree, BadEvent),
     T8 = os:timestamp(),
     D4 = timer:now_diff(T8, T7),
-    io:format(user, "bad: search = ~p, exists = ~p~n", [D3, D4]),
-    ok = erl_betree:betree_free(Betree).
+    io:format(user, "bad: search = ~p, exists = ~p~n", [D3, D4]).
 
 -record(sub, {i}).
 sub_test() ->
@@ -424,8 +400,7 @@ sub_test() ->
     {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
     ok = erl_betree:betree_insert_sub(Betree, Sub),
     Event = [#sub{i = 0}],
-    {ok, [Id]} = erl_betree:betree_search(Betree, Event),
-    ok = erl_betree:betree_free(Betree).
+    {ok, [Id]} = erl_betree:betree_search(Betree, Event).
 
 -record(freq_bug, {now, frequency_caps}).
 frequency_bug_test() ->
@@ -441,6 +416,5 @@ frequency_bug_test() ->
     {ok, Sub} = erl_betree:betree_make_sub(Betree, 0, Consts, Expr),
     ok = erl_betree:betree_insert_sub(Betree, Sub),
     Event = [#freq_bug{now = 1541704800, frequency_caps = [{{<<"flight:ip">>, 101801, <<"3495614">>}, 1, 1546537569676283}]}],
-    {ok, []} = erl_betree:betree_search(Betree, Event),
-    ok = erl_betree:betree_free(Betree).
+    {ok, []} = erl_betree:betree_search(Betree, Event).
 

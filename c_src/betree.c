@@ -115,21 +115,6 @@ static struct sub* get_sub(ErlNifEnv* env, const ERL_NIF_TERM term)
     return sub;
 }
 
-static ERL_NIF_TERM nif_betree_free(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    (void)argv;
-    ERL_NIF_TERM retval;
-
-    if(argc != 1) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-
-    retval = atom_ok;
-cleanup:
-    return retval;
-}
-
 static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     (void)argc;(void)argv;
@@ -1079,7 +1064,6 @@ cleanup:
 
 static ErlNifFunc nif_functions[] = {
     {"betree_make", 0, nif_betree_make, 0},
-    {"betree_free", 1, nif_betree_free, 0},
     {"betree_add_domains", 2, nif_betree_add_domains, 0},
     {"betree_insert", 4, nif_betree_insert, 0},
     {"betree_search", 2, nif_betree_search, 0},

@@ -5,7 +5,6 @@
 
 -export([
     betree_make/0,
-    betree_free/1,
     betree_add_domains/2,
     betree_insert/4,
     betree_search/2,
@@ -38,8 +37,6 @@ nif_stub_error(Line) ->
     erlang:nif_error({nif_not_loaded,module,?MODULE,line,Line}).
 
 betree_make() ->
-    ?nif_stub.
-betree_free(_Betree) ->
     ?nif_stub.
 betree_add_domains(_Betree, _Domains)->
     ?nif_stub.
