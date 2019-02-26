@@ -12,6 +12,13 @@ static ERL_NIF_TERM atom_error;
 static ERL_NIF_TERM atom_bad_expr;
 static ERL_NIF_TERM atom_bad_event;
 
+static ERL_NIF_TERM atom_bad_arity;
+static ERL_NIF_TERM atom_bad_id;
+static ERL_NIF_TERM atom_bad_constant_list;
+static ERL_NIF_TERM atom_bad_constant;
+static ERL_NIF_TERM atom_bad_binary;
+static ERL_NIF_TERM atom_failed;
+
 // domain types
 static ERL_NIF_TERM atom_int;
 static ERL_NIF_TERM atom_int_list;
@@ -32,6 +39,7 @@ static ERL_NIF_TERM atom_disallow_undefined;
 static ERL_NIF_TERM atom_true;
 static ERL_NIF_TERM atom_false;
 static ERL_NIF_TERM atom_undefined;
+static ERL_NIF_TERM atom_unknown;
 
 static ErlNifResourceType* MEM_BETREE;
 static ErlNifResourceType* MEM_SUB;
@@ -68,6 +76,12 @@ static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
     atom_error = make_atom(env, "error");
     atom_bad_expr = make_atom(env, "bad_expr");
     atom_bad_event = make_atom(env, "bad_event");
+    atom_bad_arity = make_atom(env, "bad_arity");
+    atom_bad_id = make_atom(env, "bad_id");
+    atom_bad_constant_list = make_atom(env, "bad_constant_list");
+    atom_bad_constant = make_atom(env, "bad_constant");
+    atom_bad_binary = make_atom(env, "bad_binary");
+    atom_failed = make_atom(env, "failed");
 
     atom_int = make_atom(env, "int");;
     atom_int_list = make_atom(env, "int_list");
@@ -86,6 +100,7 @@ static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
     atom_true = make_atom(env, "true");
     atom_false = make_atom(env, "false");
     atom_undefined = make_atom(env, "undefined");
+    atom_unknown = make_atom(env, "unknown");
 
     int flags = (int)((unsigned)ERL_NIF_RT_CREATE | (unsigned)ERL_NIF_RT_TAKEOVER);
     MEM_BETREE = enif_open_resource_type(env, NULL, "betree", cleanup_betree, flags, NULL);
@@ -314,7 +329,7 @@ static ERL_NIF_TERM nif_betree_make_sub(ErlNifEnv* env, int argc, const ERL_NIF_
     size_t constant_count = 0;
     struct betree_constant** constants = NULL;
     if(argc != 4) {
-        retval = enif_make_badarg(env);
+        retval = enif_make_tuple2(env, atom_error, atom_bad_arity);
         goto cleanup;
     }
 
@@ -322,7 +337,7 @@ static ERL_NIF_TERM nif_betree_make_sub(ErlNifEnv* env, int argc, const ERL_NIF_
 
     betree_sub_t sub_id;
     if(!enif_get_uint64(env, argv[1], &sub_id)) {
-        retval = enif_make_badarg(env);
+        retval = enif_make_tuple2(env, atom_error, atom_bad_id);
         goto cleanup;
     }
 
@@ -331,57 +346,60 @@ static ERL_NIF_TERM nif_betree_make_sub(ErlNifEnv* env, int argc, const ERL_NIF_
     unsigned int length;
 
     if (!enif_get_list_length(env, argv[2], &length)) {
-        retval = enif_make_badarg(env);
+        retval = enif_make_tuple2(env, atom_error, atom_bad_constant_list);
         goto cleanup;
     }
 
     constants = enif_alloc(length * sizeof(*constants));
     constant_count = length;
+    for (unsigned int i = 0; i < length; i++) {
+        constants[i] = NULL;
+    }
 
     for (unsigned int i = 0; i < length; i++) {
         if(!enif_get_list_cell(env, tail, &head, &tail)) {
-            retval = enif_make_badarg(env);
+            retval = enif_make_tuple2(env, atom_error, atom_bad_constant_list);
             goto cleanup;
         }
         const ERL_NIF_TERM* tuple;
         int tuple_len;
 
         if(!enif_get_tuple(env, head, &tuple_len, &tuple)) {
-            retval = enif_make_badarg(env);
+            retval = enif_make_tuple4(env, atom_error, atom_bad_constant, enif_make_int64(env, i), atom_unknown);
             goto cleanup;
         }
 
         if(tuple_len != 2) {
-            retval = enif_make_badarg(env);
+            retval = enif_make_tuple4(env, atom_error, atom_bad_constant, enif_make_int64(env, i), atom_unknown);
             goto cleanup;
         }
         char constant_name[CONSTANT_NAME_LEN];
         if(!enif_get_atom(env, tuple[0], constant_name, CONSTANT_NAME_LEN, ERL_NIF_LATIN1)) {
-            retval = enif_make_badarg(env);
+            retval = enif_make_tuple4(env, atom_error, atom_bad_constant, enif_make_int64(env, i), atom_unknown);
             goto cleanup;
         }
 
         int64_t value;
         if(!enif_get_int64(env, tuple[1], &value)) {
-            retval = enif_make_badarg(env);
+            retval = enif_make_tuple4(env, atom_error, atom_bad_constant, enif_make_int64(env, i), make_atom(env, constant_name));
             goto cleanup;
         }
         constants[i] = betree_make_integer_constant(constant_name, value);
     }
 
     if(!enif_inspect_iolist_as_binary(env, argv[3], &bin)) {
-        retval = enif_make_badarg(env);
+        retval = enif_make_tuple2(env, atom_error, atom_bad_binary);
         goto cleanup;
     }
     expr = alloc_string(bin);
     if (expr == NULL) {
-        retval = enif_make_badarg(env);
+        retval = enif_make_tuple2(env, atom_error, atom_bad_binary);
         goto cleanup;
     }
 
     const struct betree_sub* betree_sub = betree_make_sub(betree, sub_id, constant_count, (const struct betree_constant**)constants, expr);
     if(betree_sub == NULL) {
-        retval = enif_make_badarg(env);
+        retval = enif_make_tuple2(env, atom_error, atom_failed);
         goto cleanup;
     }
 

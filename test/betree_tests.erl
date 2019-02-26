@@ -418,3 +418,15 @@ frequency_bug_test() ->
     Event = [#freq_bug{now = 1541704800, frequency_caps = [{{<<"flight:ip">>, 101801, <<"3495614">>}, 1, 1546537569676283}]}],
     {ok, []} = erl_betree:betree_search(Betree, Event).
 
+make_sub_exceptions_test() ->
+    {ok, Betree} = erl_betree:betree_make(),
+    ok = erl_betree:betree_add_domains(Betree, []),
+    %Can't actually test bad_arity
+    {error, bad_id} = erl_betree:betree_make_sub(Betree, bad_id, [], <<"true">>),
+    {error, bad_constant_list} = erl_betree:betree_make_sub(Betree, 0, bad_constant_list, <<"true">>),
+    {error, bad_constant, 0, unknown} = erl_betree:betree_make_sub(Betree, 0, [not_a_tuple], <<"true">>),
+    {error, bad_constant, 0, unknown} = erl_betree:betree_make_sub(Betree, 0, [{"not atom", value}], <<"true">>),
+    {error, bad_constant, 0, bad} = erl_betree:betree_make_sub(Betree, 0, [{bad, value}], <<"true">>),
+    {error, bad_binary} = erl_betree:betree_make_sub(Betree, 0, [], bad_binary),
+    ok.
+
