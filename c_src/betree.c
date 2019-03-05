@@ -1081,15 +1081,15 @@ cleanup:
 }
 
 static ErlNifFunc nif_functions[] = {
-    {"betree_make", 0, nif_betree_make, 0},
-    {"betree_add_domains", 2, nif_betree_add_domains, 0},
-    {"betree_insert", 4, nif_betree_insert, 0},
-    {"betree_search", 2, nif_betree_search, 0},
-    {"betree_exists", 2, nif_betree_exists, 0},
+    {"betree_make", 0, nif_betree_make, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"betree_add_domains", 2, nif_betree_add_domains, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"betree_insert", 4, nif_betree_insert, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"betree_search", 2, nif_betree_search, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"betree_exists", 2, nif_betree_exists, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     /*{"betree_delete", 2, nif_betree_delete, 0},*/
-    {"betree_change_boundaries", 2, nif_betree_change_boundaries, 0},
-    {"betree_make_sub", 4, nif_betree_make_sub, 0},
-    {"betree_insert_sub", 2, nif_betree_insert_sub, 0}
+    {"betree_change_boundaries", 2, nif_betree_change_boundaries, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"betree_make_sub", 4, nif_betree_make_sub, ERL_NIF_DIRTY_JOB_CPU_BOUND},
+    {"betree_insert_sub", 2, nif_betree_insert_sub, ERL_NIF_DIRTY_JOB_CPU_BOUND}
 };
 
 ERL_NIF_INIT(erl_betree_nif, nif_functions, &load, NULL, NULL, NULL);
