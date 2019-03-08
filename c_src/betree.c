@@ -107,7 +107,7 @@ static int load(ErlNifEnv* env, void **priv_data, ERL_NIF_TERM load_info)
     if(MEM_BETREE == NULL) {
         return -1;
     }
-    // We don't own the betree_sub, betree will free it. No dtor
+    // We don't own the betree_sub, betree will deinit it. No dtor
     MEM_SUB = enif_open_resource_type(env, NULL, "sub", NULL, flags, NULL);
     if(MEM_SUB == NULL) {
         return -1;
@@ -128,22 +128,6 @@ static struct sub* get_sub(ErlNifEnv* env, const ERL_NIF_TERM term)
     struct sub* sub = NULL;
     enif_get_resource(env, term, MEM_SUB, (void*)&sub);
     return sub;
-}
-
-static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    (void)argc;(void)argv;
-    ERL_NIF_TERM retval;
-
-    struct betree* betree = enif_alloc_resource(MEM_BETREE, sizeof(*betree));
-    betree_init(betree);
-
-    ERL_NIF_TERM term = enif_make_resource(env, betree);
-
-    enif_release_resource(betree);
-
-    retval = enif_make_tuple(env, 2, atom_ok, term);
-    return retval;
 }
 
 static char *alloc_string(ErlNifBinary bin)
@@ -277,24 +261,29 @@ static bool add_domains(ErlNifEnv* env, struct betree* betree, ERL_NIF_TERM list
     return true;
 }
 
-static ERL_NIF_TERM nif_betree_add_domains(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM nif_betree_make(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM retval;
-    if(argc != 2) {
+    if(argc != 1) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
 
-    struct betree* betree = get_betree(env, argv[0]);
+    struct betree* betree = enif_alloc_resource(MEM_BETREE, sizeof(*betree));
+    betree_init(betree);
+
+    ERL_NIF_TERM term = enif_make_resource(env, betree);
+
+    enif_release_resource(betree);
 
     unsigned int list_len;
-    if(!enif_get_list_length(env, argv[1], &list_len)) {
+    if(!enif_get_list_length(env, argv[0], &list_len)) {
         retval = enif_make_badarg(env);
         goto cleanup;
     }
 
     ERL_NIF_TERM head;
-    ERL_NIF_TERM tail = argv[1];
+    ERL_NIF_TERM tail = argv[0];
 
     for(unsigned int i = 0; i < list_len; i++) {
         if(!enif_get_list_cell(env, tail, &head, &tail)) {
@@ -313,9 +302,8 @@ static ERL_NIF_TERM nif_betree_add_domains(ErlNifEnv* env, int argc, const ERL_N
         }
     }
 
-    retval = atom_ok;
+    retval = enif_make_tuple(env, 2, atom_ok, term);
 cleanup:
-
     return retval;
 }
 
@@ -452,98 +440,6 @@ static ERL_NIF_TERM nif_betree_insert_sub(ErlNifEnv* env, int argc, const ERL_NI
         retval = atom_error;
     }
 cleanup:
-    return retval;
-}
-
-static ERL_NIF_TERM nif_betree_insert(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ERL_NIF_TERM retval;
-    ErlNifBinary bin;
-    char* expr = NULL;
-    size_t constant_count = 0;
-    struct betree_constant** constants = NULL;
-    if(argc != 4) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-
-    struct betree* betree = get_betree(env, argv[0]);
-
-    betree_sub_t sub_id;
-    if(!enif_get_uint64(env, argv[1], &sub_id)) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-
-    ERL_NIF_TERM head;
-    ERL_NIF_TERM tail = argv[2];
-    unsigned int length;
-
-    if (!enif_get_list_length(env, argv[2], &length)) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-
-    constants = enif_alloc(length * sizeof(*constants));
-    constant_count = length;
-
-    for (unsigned int i = 0; i < length; i++) {
-        if(!enif_get_list_cell(env, tail, &head, &tail)) {
-            retval = enif_make_badarg(env);
-            goto cleanup;
-        }
-        const ERL_NIF_TERM* tuple;
-        int tuple_len;
-
-        if(!enif_get_tuple(env, head, &tuple_len, &tuple)) {
-            retval = enif_make_badarg(env);
-            goto cleanup;
-        }
-
-        if(tuple_len != 2) {
-            retval = enif_make_badarg(env);
-            goto cleanup;
-        }
-        char constant_name[CONSTANT_NAME_LEN];
-        if(!enif_get_atom(env, tuple[0], constant_name, CONSTANT_NAME_LEN, ERL_NIF_LATIN1)) {
-            retval = enif_make_badarg(env);
-            goto cleanup;
-        }
-
-        int64_t value;
-        if(!enif_get_int64(env, tuple[1], &value)) {
-            retval = enif_make_badarg(env);
-            goto cleanup;
-        }
-        constants[i] = betree_make_integer_constant(constant_name, value);
-    }
-
-    if(!enif_inspect_iolist_as_binary(env, argv[3], &bin)) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-    expr = alloc_string(bin);
-    if (expr == NULL) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-
-    bool result = betree_insert_with_constants(betree, sub_id, constant_count, (const struct betree_constant**)constants, expr);
-    if(result) {
-        retval = atom_ok;
-    }
-    else {
-        retval = atom_error;
-    }
-cleanup:
-    if(expr != NULL) {
-        enif_free(expr);
-    }
-    if(constants != NULL) {
-        betree_free_constants(constant_count, constants);
-        enif_free(constants);
-    }
-
     return retval;
 }
 
@@ -1044,52 +940,13 @@ cleanup:
     /*return retval;*/
 /*}*/
 
-static ERL_NIF_TERM nif_betree_change_boundaries(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ERL_NIF_TERM retval;
-    ErlNifBinary bin;
-    char* expr = NULL;
-    if(argc != 2) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-
-    struct betree* betree = get_betree(env, argv[0]);
-
-    if(!enif_inspect_iolist_as_binary(env, argv[1], &bin)) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-    expr = alloc_string(bin);
-    if (expr == NULL) {
-        retval = enif_make_badarg(env);
-        goto cleanup;
-    }
-
-    bool ret = betree_change_boundaries(betree, expr);
-    if(ret) {
-        retval = atom_ok;
-    }
-    else {
-        retval = atom_error;
-    }
-cleanup:
-    if(expr != NULL) {
-        enif_free(expr);
-    }
-    return retval;
-}
-
 static ErlNifFunc nif_functions[] = {
-    {"betree_make", 0, nif_betree_make, 0},
-    {"betree_add_domains", 2, nif_betree_add_domains, 0},
-    {"betree_insert", 4, nif_betree_insert, 0},
-    {"betree_search", 2, nif_betree_search, 0},
-    {"betree_exists", 2, nif_betree_exists, 0},
-    /*{"betree_delete", 2, nif_betree_delete, 0},*/
-    {"betree_change_boundaries", 2, nif_betree_change_boundaries, 0},
+    {"betree_make", 1, nif_betree_make, 0},
     {"betree_make_sub", 4, nif_betree_make_sub, 0},
-    {"betree_insert_sub", 2, nif_betree_insert_sub, 0}
+    {"betree_insert_sub", 2, nif_betree_insert_sub, 0},
+    {"betree_exists", 2, nif_betree_exists, 0},
+    {"betree_search", 2, nif_betree_search, 0}
+    /*{"betree_delete", 2, nif_betree_delete, 0}*/
 };
 
 ERL_NIF_INIT(erl_betree_nif, nif_functions, &load, NULL, NULL, NULL);

@@ -4,15 +4,11 @@
 -on_load(on_load/0).
 
 -export([
-    betree_make/0,
-    betree_add_domains/2,
-    betree_insert/4,
-    betree_search/2,
-    betree_exists/2,
-    betree_delete/2,
-    betree_change_boundaries/2,
+    betree_make/1,
     betree_make_sub/4,
-    betree_insert_sub/2
+    betree_insert_sub/2,
+    betree_exists/2,
+    betree_search/2
 ]).
 
 -spec on_load() -> ok.
@@ -36,22 +32,14 @@ on_load() ->
 nif_stub_error(Line) ->
     erlang:nif_error({nif_not_loaded,module,?MODULE,line,Line}).
 
-betree_make() ->
-    ?nif_stub.
-betree_add_domains(_Betree, _Domains)->
-    ?nif_stub.
-betree_insert(_Betree, _SubId, _Constants, _Expr) ->
-    ?nif_stub.
-betree_search(_Betree, _Event) ->
-    ?nif_stub.
-betree_exists(_Betree, _Event) ->
-    ?nif_stub.
-betree_delete(_Betree, _SubId) ->
-    ?nif_stub.
-betree_change_boundaries(_Betree, _Expr) ->
+betree_make(_Domains) ->
     ?nif_stub.
 betree_make_sub(_Betree, _SubId, _Constants, _Expr) ->
     ?nif_stub.
 betree_insert_sub(_Betree, _Sub) ->
+    ?nif_stub.
+betree_exists(_Betree, _Event) ->
+    ?nif_stub.
+betree_search(_Betree, _Event) ->
     ?nif_stub.
 

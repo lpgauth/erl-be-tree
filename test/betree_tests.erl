@@ -7,9 +7,9 @@ iolist_test() ->
     Domains = [[{a, int, disallow_undefined}, {b, int, disallow_undefined}, {c, int, disallow_undefined}]],
     Expr = ["a = ", [integer_to_list(3), [" and b = 6"], <<" and c =">>, [[integer_to_binary(9)]]]],
     Event = [#iolist_test{ a = 3, b = 6, c = 9 }],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ok = erl_betree:betree_insert(Betree, 1, [], Expr),
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, [], Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
     {ok, [1]} = erl_betree:betree_search(Betree, Event).
 
 -record(basic_test, { i }).
@@ -17,29 +17,15 @@ basic_test() ->
     Domains = [[{i, int, disallow_undefined, 0, 10}]],
     Expr = <<"i = 5">>,
     Event = [#basic_test{ i = 5 }],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ok = erl_betree:betree_insert(Betree, 1, [], Expr),
-    {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual(Subs, [1]).
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, [], Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
+    {ok, [1]} = erl_betree:betree_search(Betree, Event).
 
 bad_insert_no_domain_test() ->
     Expr = <<"i = 5">>,
-    {ok, Betree} = erl_betree:betree_make(),
-    ?assertEqual(error, erl_betree:betree_insert(Betree, 1, [], Expr)).
-
--record(bad_insert_bounded_string_test, { s }).
-bad_insert_bounded_string_test() ->
-    Domains = [[{s, bin, disallow_undefined, 1}]],
-    Expr1 = <<"s <> \"good\"">>,
-    Expr2 = <<"s <> \"bad\"">>,
-    Event = [#bad_insert_bounded_string_test{ s = <<"diff">> }],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ok = erl_betree:betree_insert(Betree, 1, [], Expr1),
-    ?assertEqual(error, erl_betree:betree_insert(Betree, 2, [], Expr2)),
-    {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual(Subs, [1]).
+    {ok, Betree} = erl_betree:betree_make([]),
+    {error, failed} = erl_betree:betree_make_sub(Betree, 1, [], Expr).
 
 atom_all_domain_types_test() ->
     Domains = [[
@@ -60,8 +46,7 @@ atom_all_domain_types_test() ->
                 {segment, segments, allow_undefined},
                 {segment2, segments, disallow_undefined}
                ]],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains).
+    {ok, _Betree} = erl_betree:betree_make(Domains).
 
 -record(single, { a, b }).
 atom_single_domain_list_test() ->
@@ -71,11 +56,10 @@ atom_single_domain_list_test() ->
                ]],
     Expr = <<"a and b">>,
     Event = [#single{ a = true, b = true }],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, [], Expr)),
-    {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([1], Subs).
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, [], Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
+    {ok, [1]} = erl_betree:betree_search(Betree, Event).
 
 -record(first, { a }).
 -record(second, { b }).
@@ -86,11 +70,10 @@ atom_multiple_domain_list_test() ->
               ],
     Expr = <<"a and b">>,
     Event = [#first{ a = true },#second{ b = true }],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, [], Expr)),
-    {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([1], Subs).
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, [], Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
+    {ok, [1]} = erl_betree:betree_search(Betree, Event).
 
 -record(all, { b, i, f, s, il, sl, seg, freq, now }).
 atom_all_search_term_test() ->
@@ -131,11 +114,10 @@ atom_all_search_term_test() ->
                freq = [{{<<"flight">>, 10, <<"ns">>}, 0, undefined}],
                now = 0
               }],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
-    {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([1], Subs).
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, Consts, Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
+    {ok, [1]} = erl_betree:betree_search(Betree, Event).
 
 -record(constant_test, { frequency_caps, now }).
 constant_test() ->
@@ -152,12 +134,11 @@ constant_test() ->
                frequency_caps = [{{<<"flight">>, 10, <<"ns">>}, 100, undefined}],
                now = 0
               }],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ?assertEqual(error, erl_betree:betree_insert(Betree, 1, [], Expr)),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
-    {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([], Subs).
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {error, failed} = erl_betree:betree_make_sub(Betree, 1, [], Expr),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, Consts, Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
+    {ok, []} = erl_betree:betree_search(Betree, Event).
 
 -record(bad_type_test, { bool }).
 bad_type_test() ->
@@ -167,9 +148,9 @@ bad_type_test() ->
     Consts = [],
     Expr = <<"bool">>,
     Event = [#bad_type_test{bool = 1}],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, Consts, Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
     ?assertError(badarg, erl_betree:betree_search(Betree, Event)).
 
 -record(bad_frequency_caps, { l }).
@@ -186,9 +167,9 @@ bad_frequency_caps_test() ->
     %[{Id, [], "true"}], Defs, [#fca_list_rec{l = <<"a">>}], error),
     %[{Id, [], "true"}], Defs, [#fca_list_rec{l = [10]}], error),
     %[{Id, [], "true"}], Defs, [#fca_list_rec{l = [<<"a">>]}], error)
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, Consts, Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
     ?assertError(badarg, erl_betree:betree_search(Betree, Event)).
 
 -record(handle_undef_in_search, {def}).
@@ -199,9 +180,9 @@ handle_undef_in_search_test() ->
     Consts = [],
     Expr = <<"def = 10">>,
     Event = [#handle_undef_in_search{}],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr)),
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, Consts, Expr),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
     ?assertError(badarg, erl_betree:betree_search(Betree, Event)).
 
 -record(bug_geo_request,{exchange, member_id, latitude, longitude}).
@@ -223,12 +204,12 @@ bug_geo_test() ->
               "and (member_id is not null and member_id = 0) and true)) and geo_within_radius(100.0, 100.0, 10.0)">>,
     Event = [#bug_geo_request{exchange = 2, member_id = 0, latitude = 100.0, longitude = 100.0},
              #bug_geo_impression{width = 100, height = 200, types = [1]}],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 1, Consts, Expr1)),
-    ?assertEqual(ok, erl_betree:betree_insert(Betree, 2, Consts, Expr2)),
-    {ok, Subs} = erl_betree:betree_search(Betree, Event),
-    ?assertEqual([1, 2], lists:sort(Subs)).
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub1} = erl_betree:betree_make_sub(Betree, 1, Consts, Expr1),
+    ok = erl_betree:betree_insert_sub(Betree, Sub1),
+    {ok, Sub2} = erl_betree:betree_make_sub(Betree, 2, Consts, Expr2),
+    ok = erl_betree:betree_insert_sub(Betree, Sub2),
+    {ok, [1,2]} = erl_betree:betree_search(Betree, Event).
 
 -record(multiple,{i}).
 multiple_trees_test() ->
@@ -238,84 +219,50 @@ multiple_trees_test() ->
     Expr2 = <<"i > 5">>,
     Event1 = [#multiple{i = 3}],
     Event2 = [#multiple{i = 8}],
-    {ok, Betree1} = erl_betree:betree_make(),
-    {ok, Betree2} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree1, Domains),
-    ok = erl_betree:betree_add_domains(Betree2, Domains),
-    ok = erl_betree:betree_insert(Betree1, 1, Consts, Expr1),
-    ok = erl_betree:betree_insert(Betree2, 2, Consts, Expr2),
-    ?assertEqual({ok, [1]}, erl_betree:betree_search(Betree1, Event1)),
-    ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree1, Event2)),
-    ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree2, Event1)),
-    ?assertEqual({ok, [2]}, erl_betree:betree_search(Betree2, Event2)),
-    ?assertEqual({ok, [1]}, erl_betree:betree_search(Betree1, Event1)),
-    ?assertEqual({ok, [ ]}, erl_betree:betree_search(Betree1, Event2)).
+    {ok, Betree1} = erl_betree:betree_make(Domains),
+    {ok, Betree2} = erl_betree:betree_make(Domains),
+    {ok, Sub1} = erl_betree:betree_make_sub(Betree1, 1, Consts, Expr1),
+    ok = erl_betree:betree_insert_sub(Betree1, Sub1),
+    {ok, Sub2} = erl_betree:betree_make_sub(Betree2, 2, Consts, Expr2),
+    ok = erl_betree:betree_insert_sub(Betree2, Sub2),
+    {ok, [1]} = erl_betree:betree_search(Betree1, Event1),
+    {ok, [ ]} = erl_betree:betree_search(Betree1, Event2),
+    {ok, [ ]} = erl_betree:betree_search(Betree2, Event1),
+    {ok, [2]} = erl_betree:betree_search(Betree2, Event2),
+    {ok, [1]} = erl_betree:betree_search(Betree1, Event1),
+    {ok, [ ]} = erl_betree:betree_search(Betree1, Event2).
 
 bad_domain_type_test() ->
     Domains = [[{i1, int, allow_undefined},
                 {i2, innt, allow_undefined},
                 {i3, int, allow_undefined}]],
-    {ok, Betree} = erl_betree:betree_make(),
-    ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)).
+    ?assertError(badarg, erl_betree:betree_make(Domains)).
 
 bad_domain_undef_test() ->
     Domains = [[{i1, int, allow_undefined},
                 {i2, int, alloww_undefined},
                 {i3, int, allow_undefined}]],
-    {ok, Betree} = erl_betree:betree_make(),
-    ?assertError(badarg, erl_betree:betree_add_domains(Betree, Domains)).
+    ?assertError(badarg, erl_betree:betree_make(Domains)).
 
 out_of_bound_integer_expression_test() ->
     Domains = [[{i, int, allow_undefined, 0, 10}]],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
-    ok = erl_betree:betree_insert(Betree, 1, [], <<"i > 12">>),
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, 1, [], <<"i > 12">>),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
     Event = [#multiple{i = 15}],
     {ok, [1]} = erl_betree:betree_search(Betree, Event).
-
-change_boundaries_test() ->
-    Expr1 = <<"i = 1">>,
-    Expr2 = <<"i = 2">>,
-    Expr3 = <<"i = 3">>,
-    Expr4 = <<"i = 4">>,
-    Expr5 = <<"i = 5">>,
-    Domains = [[{i, int, disallow_undefined}]],
-    Event = [#multiple{i = 2}],
-
-    {ok, Betree1} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree1, Domains),
-    ok = erl_betree:betree_insert(Betree1, 1, [], Expr1),
-    ok = erl_betree:betree_insert(Betree1, 2, [], Expr2),
-    ok = erl_betree:betree_insert(Betree1, 3, [], Expr3),
-    ok = erl_betree:betree_insert(Betree1, 4, [], Expr4),
-    ok = erl_betree:betree_insert(Betree1, 5, [], Expr5),
-    {ok, [2]} = erl_betree:betree_search(Betree1, Event),
-
-    {ok, Betree2} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree2, Domains),
-    ok = erl_betree:betree_change_boundaries(Betree2, Expr1),
-    ok = erl_betree:betree_change_boundaries(Betree2, Expr2),
-    ok = erl_betree:betree_change_boundaries(Betree2, Expr3),
-    ok = erl_betree:betree_change_boundaries(Betree2, Expr4),
-    ok = erl_betree:betree_change_boundaries(Betree2, Expr5),
-    ok = erl_betree:betree_insert(Betree2, 1, [], Expr1),
-    ok = erl_betree:betree_insert(Betree2, 2, [], Expr2),
-    ok = erl_betree:betree_insert(Betree2, 3, [], Expr3),
-    ok = erl_betree:betree_insert(Betree2, 4, [], Expr4),
-    ok = erl_betree:betree_insert(Betree2, 5, [], Expr5),
-    {ok, [2]} = erl_betree:betree_search(Betree2, Event).
 
 -record(list_bug, {il}).
 
 list_bug_test() ->
     Domains = [[{il, int_list, disallow_undefined, 1, 2}]],
     Event  = [#list_bug{il = [1,2]}],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
+    {ok, Betree} = erl_betree:betree_make(Domains),
     Ids = [1,2,3,4,5],
     Exprs = [{Id, <<"1 in il">>} || Id <- Ids],
     lists:foreach(fun ({Id, Expr}) -> 
-        ok = erl_betree:betree_insert(Betree, Id, [], Expr),
+        {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
+        ok = erl_betree:betree_insert_sub(Betree, Sub),
         ok
     end, Exprs),
     {ok, Ids} = erl_betree:betree_search(Betree, Event).
@@ -325,38 +272,35 @@ list_bug_test() ->
 int_enum_test() ->
     Domains = [[{i, int_enum, disallow_undefined}]],
     Event = [#int_enum{i = 9}],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
+    {ok, Betree} = erl_betree:betree_make(Domains),
     Expr1 = <<"i = 8329">>,
     Expr2 = <<"i = 9">>,
     Expr3 = <<"i = 9988767">>,
     Expr4 = <<"i = 28">>,
     Expr5 = <<"i = 456">>,
-    ok = erl_betree:betree_change_boundaries(Betree, Expr1),
-    ok = erl_betree:betree_change_boundaries(Betree, Expr2),
-    ok = erl_betree:betree_change_boundaries(Betree, Expr3),
-    ok = erl_betree:betree_change_boundaries(Betree, Expr4),
-    ok = erl_betree:betree_change_boundaries(Betree, Expr5),
-    ok = erl_betree:betree_insert(Betree, 1, [], Expr1),
-    ok = erl_betree:betree_insert(Betree, 2, [], Expr2),
-    ok = erl_betree:betree_insert(Betree, 3, [], Expr3),
-    ok = erl_betree:betree_insert(Betree, 4, [], Expr4),
-    ok = erl_betree:betree_insert(Betree, 5, [], Expr5),
+    {ok, Sub1} = erl_betree:betree_make_sub(Betree, 1, [], Expr1),
+    ok = erl_betree:betree_insert_sub(Betree, Sub1),
+    {ok, Sub2} = erl_betree:betree_make_sub(Betree, 2, [], Expr2),
+    ok = erl_betree:betree_insert_sub(Betree, Sub2),
+    {ok, Sub3} = erl_betree:betree_make_sub(Betree, 3, [], Expr3),
+    ok = erl_betree:betree_insert_sub(Betree, Sub3),
+    {ok, Sub4} = erl_betree:betree_make_sub(Betree, 4, [], Expr4),
+    ok = erl_betree:betree_insert_sub(Betree, Sub4),
+    {ok, Sub5} = erl_betree:betree_make_sub(Betree, 5, [], Expr5),
+    ok = erl_betree:betree_insert_sub(Betree, Sub5),
     {ok, [2]} = erl_betree:betree_search(Betree, Event).
 
 -record(memory, {i}).
 memory_test() ->
     Domains = [[{i, int, disallow_undefined}]],
     Event = [#memory{i = 5}],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
+    {ok, Betree} = erl_betree:betree_make(Domains),
     Ids = [1,2,3,4,5,6,7,8,9],
     Exprs = [ {Id, list_to_binary(io_lib:format("i = ~p", [Id]))} || Id <- Ids ],
-    lists:foreach(fun ({_Id, Expr}) -> 
-        erl_betree:betree_change_boundaries(Betree, Expr)
-    end, Exprs),
     lists:foreach(fun ({Id, Expr}) -> 
-        erl_betree:betree_insert(Betree, Id, [], Expr)
+        {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
+        ok = erl_betree:betree_insert_sub(Betree, Sub),
+        ok
     end, Exprs),
     {ok, [5]} = erl_betree:betree_search(Betree, Event),
     io:format(user, "memory = ~p~n", [erlang:memory()]).
@@ -366,10 +310,13 @@ exists_test() ->
     Domains = [[{i, int, disallow_undefined}]],
     GoodEvent = [#exists{i = 0}],
     BadEvent = [#exists{i = 1}],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
+    {ok, Betree} = erl_betree:betree_make(Domains),
     Exprs = lists:map(fun (I) -> {I, <<"i = 0">>} end, lists:seq(1, 10000)),
-    lists:foreach(fun ({Id, Expr}) -> erl_betree:betree_insert(Betree, Id, [], Expr) end, Exprs),
+    lists:foreach(fun ({Id, Expr}) -> 
+        {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
+        ok = erl_betree:betree_insert_sub(Betree, Sub),
+        ok
+    end, Exprs),
     T1 = os:timestamp(),
     {ok, _Subs} = erl_betree:betree_search(Betree, GoodEvent),
     T2 = os:timestamp(),
@@ -393,8 +340,7 @@ exists_test() ->
 -record(sub, {i}).
 sub_test() ->
     Domains = [[{i, int, disallow_undefined}]],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
+    {ok, Betree} = erl_betree:betree_make(Domains),
     Id = 0,
     Expr = <<"i = 0">>,
     {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
@@ -405,8 +351,7 @@ sub_test() ->
 -record(freq_bug, {now, frequency_caps}).
 frequency_bug_test() ->
     Domains = [[{now, int, disallow_undefined}, {frequency_caps, frequency_caps, disallow_undefined}]],
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, Domains),
+    {ok, Betree} = erl_betree:betree_make(Domains),
     Expr = <<"within_frequency_cap(\"flight:ip\", \"3495614\", 1, 5184000)">>,
     Consts = [
         {campaign_id, 50650},
@@ -419,8 +364,7 @@ frequency_bug_test() ->
     {ok, []} = erl_betree:betree_search(Betree, Event).
 
 make_sub_exceptions_test() ->
-    {ok, Betree} = erl_betree:betree_make(),
-    ok = erl_betree:betree_add_domains(Betree, []),
+    {ok, Betree} = erl_betree:betree_make([]),
     %Can't actually test bad_arity
     {error, bad_id} = erl_betree:betree_make_sub(Betree, bad_id, [], <<"true">>),
     {error, bad_constant_list} = erl_betree:betree_make_sub(Betree, 0, bad_constant_list, <<"true">>),
