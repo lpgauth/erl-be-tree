@@ -374,3 +374,13 @@ make_sub_exceptions_test() ->
     {error, bad_binary} = erl_betree:betree_make_sub(Betree, 0, [], bad_binary),
     ok.
 
+-record(unsorted, {il}).
+unsorted_test() ->
+    Domains = [[{il, int_list, allow_undefined}, {sl, bin_list, allow_undefined}]],
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    Id = 0,
+    {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], <<"2 in il">>),
+    ok = erl_betree:betree_insert_sub(Betree, Sub),
+    {ok, [Id]} = erl_betree:betree_search(Betree, [#unsorted{il = [9, 10, 77, 29, 29, 84, 2]}]),
+    ok.
+
