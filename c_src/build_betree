@@ -5,8 +5,7 @@ set -x
 if [ ! -d "be-tree" ]; then
     git clone http://github.com/FrankBro/be-tree
     cd be-tree
+    git checkout lpgauth-fix/osx-linking
     make NIF=true
-    mkdir -p ../priv
-    cp build/libbetree.so ../priv/libbetree.so
 fi
 
