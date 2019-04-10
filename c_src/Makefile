@@ -1,5 +1,7 @@
 # Based on c_src.mk from erlang.mk by Loic Hoguin <essen@ninenines.eu>
 
+UNAME := $(shell uname)
+
 CURDIR := $(shell pwd)
 BASEDIR := $(abspath $(CURDIR)/..)
 
@@ -27,6 +29,10 @@ CFLAGS += -fPIC -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR) -I $(BETR
 LDLIBS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei -L $(BETREE_LIB_DIR) -lbetree
 LDFLAGS += -shared
 
+ifeq ($(UNAME), Darwin)
+	LDFLAGS += -bundle -flat_namespace -undefined suppress
+endif
+
 # Verbosity.
 
 c_verbose_0 = @echo " C     " $(?F);
@@ -42,7 +48,7 @@ COMPILE_C = $(c_verbose) $(CC) $(CFLAGS) -c
 
 $(C_SRC_OUTPUT): $(OBJECTS)
 	@mkdir -p $(BASEDIR)/priv/
-	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT) '-Wl,-rpath=$$ORIGIN'
+	$(link_verbose) $(CC) $(OBJECTS) $(LDFLAGS) $(LDLIBS) -o $(C_SRC_OUTPUT)
 
 %.o: %.c
 	$(COMPILE_C) $(OUTPUT_OPTION) $<
