@@ -196,12 +196,12 @@ bug_geo_test() ->
                 {height, int, disallow_undefined},
                 {types, int_list, disallow_undefined}]],
     Consts = [],
-    Expr1 = <<"(((width is not null and width = 100) and (height is not null and height = 200) " 
-              "and (types is not null and 1 in types) and true and true)) and (((exchange is not null and exchange = 2) " 
-              "and (member_id is not null and member_id = 0) and true))">>,
-    Expr2 = <<"(((width is not null and width = 100) and (height is not null and height = 200) " 
-              "and (types is not null and 1 in types) and true and true)) and (((exchange is not null and exchange = 2) " 
-              "and (member_id is not null and member_id = 0) and true)) and geo_within_radius(100.0, 100.0, 10.0)">>,
+    Expr1 = <<"(((width = 100) and (height = 200) " 
+              "and (1 in types) and true and true)) and (((exchange = 2) " 
+              "and (member_id = 0) and true))">>,
+    Expr2 = <<"(((width = 100) and (height = 200) " 
+              "and (1 in types) and true and true)) and (((exchange = 2) " 
+              "and (member_id = 0) and true)) and geo_within_radius(100.0, 100.0, 10.0)">>,
     Event = [#bug_geo_request{exchange = 2, member_id = 0, latitude = 100.0, longitude = 100.0},
              #bug_geo_impression{width = 100, height = 200, types = [1]}],
     {ok, Betree} = erl_betree:betree_make(Domains),
