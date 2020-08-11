@@ -385,225 +385,225 @@ unsorted_test() ->
     ok.
 
 
-% -type domain() :: int | float | bool | bin | int_list | bin_list | int_enum.
-% -record(valid, {var}).
-% -type valid_value() :: null | term().
-% -type validity() :: invalid | {valid, valid_value(), valid_value()}.
-% -spec run_valid(domain(), boolean(), binary(), validity()) -> ok.
-% run_valid(Domain, AllowUndefinedBool, Expr, Validity) ->
-%     AllowUndefined =
-%             case AllowUndefinedBool of
-%                 true -> allow_undefined;
-%                 false -> disallow_undefined
-%             end,
-%     Domains = [[{var, Domain, AllowUndefined}]],
-%     Id = random:uniform(100),
-%     {ok, Betree} = erl_betree:betree_make(Domains),
-%     case Validity of
-%         invalid -> 
-%             {error, _} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
-%             ok;
-%         {valid, MatchVar, NoMatchVar} ->
-%             {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
-%             ok = erl_betree:betree_insert_sub(Betree, Sub),
-%             MatchValue =
-%                 case MatchVar of
-%                     null -> [];
-%                     _ -> [#valid{var = MatchVar}]
-%                 end,
-%             {ok, [Id]} = erl_betree:betree_search(Betree, MatchValue),
-%             NoMatchValue =
-%                 case NoMatchVar of
-%                     null -> [];
-%                     _ -> [#valid{var = NoMatchVar}]
-%                 end,
-%             {ok, []} = erl_betree:betree_search(Betree, NoMatchValue),
-%             ok
-%     end.
+-type domain() :: int | float | bool | bin | int_list | bin_list | int_enum.
+-record(valid, {var}).
+-type valid_value() :: null | term().
+-type validity() :: invalid | {valid, valid_value(), valid_value()}.
+-spec run_valid(domain(), boolean(), binary(), validity()) -> ok.
+run_valid(Domain, AllowUndefinedBool, Expr, Validity) ->
+    AllowUndefined =
+            case AllowUndefinedBool of
+                true -> allow_undefined;
+                false -> disallow_undefined
+            end,
+    Domains = [[{var, Domain, AllowUndefined}]],
+    Id = random:uniform(100),
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    case Validity of
+        invalid -> 
+            {error, _} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
+            ok;
+        {valid, MatchVar, NoMatchVar} ->
+            {ok, Sub} = erl_betree:betree_make_sub(Betree, Id, [], Expr),
+            ok = erl_betree:betree_insert_sub(Betree, Sub),
+            MatchValue =
+                case MatchVar of
+                    null -> [];
+                    _ -> [#valid{var = MatchVar}]
+                end,
+            {ok, [Id]} = erl_betree:betree_search(Betree, MatchValue),
+            NoMatchValue =
+                case NoMatchVar of
+                    null -> [];
+                    _ -> [#valid{var = NoMatchVar}]
+                end,
+            {ok, []} = erl_betree:betree_search(Betree, NoMatchValue),
+            ok
+    end.
 
-% valid_comparison_integer_test() ->
-%     Expr = <<"var < 1">>,
-%     ok = run_valid(int, true, Expr, {valid, 0, 2}),
-%     ok = run_valid(float, true, Expr, {valid, 0.5, 2.0}), % fix_float_with_no_fractions fixes this
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_comparison_integer_test() ->
+    Expr = <<"var < 1">>,
+    ok = run_valid(int, true, Expr, {valid, 0, 2}),
+    ok = run_valid(float, true, Expr, {valid, 0.5, 2.0}), % fix_float_with_no_fractions fixes this
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_comparison_float_test() ->
-%     Expr = <<"var < 1.2">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, {valid, 0.9, 2.4}),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_comparison_float_test() ->
+    Expr = <<"var < 1.2">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, {valid, 0.9, 2.4}),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_equality_integer_test() ->
-%     Expr = <<"var = 1">>,
-%     ok = run_valid(int, true, Expr, {valid, 1, 0}),
-%     ok = run_valid(float, true, Expr, {valid, 1.0, 0.0}), % fix_float_with_no_fractions fixes this
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, {valid, 1, 0}),
-%     ok.
+valid_equality_integer_test() ->
+    Expr = <<"var = 1">>,
+    ok = run_valid(int, true, Expr, {valid, 1, 0}),
+    ok = run_valid(float, true, Expr, {valid, 1.0, 0.0}), % fix_float_with_no_fractions fixes this
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, {valid, 1, 0}),
+    ok.
 
-% valid_equality_float_test() ->
-%     Expr = <<"var = 1.0">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, {valid, 1.0, 0.0}),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_equality_float_test() ->
+    Expr = <<"var = 1.0">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, {valid, 1.0, 0.0}),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_equality_string_test() ->
-%     Expr = <<"var = \"value\"">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, {valid, <<"value">>, <<"wrong">>}),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_equality_string_test() ->
+    Expr = <<"var = \"value\"">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, {valid, <<"value">>, <<"wrong">>}),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_boolean_test() ->
-%     Expr = <<"var">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, {valid, true, false}),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_boolean_test() ->
+    Expr = <<"var">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, {valid, true, false}),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_set_left_integer_test() ->
-%     Expr = <<"1 in var">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, {valid, [0,1,2], [0,2]}),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_set_left_integer_test() ->
+    Expr = <<"1 in var">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, {valid, [0,1,2], [0,2]}),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_set_left_string_test() ->
-%     Expr = <<"\"value\" in var""">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, {valid, [<<"wrong">>, <<"value">>, <<"another">>], [<<"wrong">>, <<"another">>]}),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_set_left_string_test() ->
+    Expr = <<"\"value\" in var""">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, {valid, [<<"wrong">>, <<"value">>, <<"another">>], [<<"wrong">>, <<"another">>]}),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_set_right_integer_list_test() ->
-%     Expr = <<"var in (0, 2)">>,
-%     ok = run_valid(int, true, Expr, {valid, 2, 1}),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_set_right_integer_list_test() ->
+    Expr = <<"var in (0, 2)">>,
+    ok = run_valid(int, true, Expr, {valid, 2, 1}),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_set_right_string_list_test() ->
-%     Expr = <<"var in (\"value\", \"another\")">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, {valid, <<"value">>, <<"wrong">>}),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_set_right_string_list_test() ->
+    Expr = <<"var in (\"value\", \"another\")">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, {valid, <<"value">>, <<"wrong">>}),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_list_integer_list_test() ->
-%     Expr = <<"var one of (0, 2)">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, {valid, [1, 2], [1, 3]}),
-%     ok = run_valid(bin_list, true, Expr, invalid),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_list_integer_list_test() ->
+    Expr = <<"var one of (0, 2)">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, {valid, [1, 2], [1, 3]}),
+    ok = run_valid(bin_list, true, Expr, invalid),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_list_string_list_test() ->
-%     Expr = <<"var one of (\"value\", \"nope\")">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, {valid, [<<"wrong", "value">>], [<<"wrong">>, <<"no">>]}),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_list_string_list_test() ->
+    Expr = <<"var one of (\"value\", \"nope\")">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, {valid, [<<"wrong">>, <<"value">>], [<<"wrong">>, <<"no">>]}),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
 
-% valid_null_test() ->
-%     Expr = <<"var is null">>,
-%     ok = run_valid(int, true, Expr, {valid, null, 1}),
-%     ok = run_valid(int, false, Expr, invalid),
-%     ok = run_valid(float, true, Expr, {valid, null, 1.1}),
-%     ok = run_valid(float, false, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, {valid, null, true}),
-%     ok = run_valid(bool, false, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, {valid, null, <<"value">>}),
-%     ok = run_valid(bin, false, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, {valid, null, [1, 2]}),
-%     ok = run_valid(int_list, false, Expr, invalid),
-%     ok = run_valid(bin_list, true, Expr, {valid, null, [<<"value">>, <<"another">>]}),
-%     ok = run_valid(bin_list, false, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, {valid, null, 1}),
-%     ok = run_valid(int_enum, false, Expr, invalid),
-%     ok.
+valid_null_test() ->
+    Expr = <<"var is null">>,
+    ok = run_valid(int, true, Expr, {valid, null, 1}),
+    ok = run_valid(int, false, Expr, invalid),
+    ok = run_valid(float, true, Expr, {valid, null, 1.1}),
+    ok = run_valid(float, false, Expr, invalid),
+    ok = run_valid(bool, true, Expr, {valid, null, true}),
+    ok = run_valid(bool, false, Expr, invalid),
+    ok = run_valid(bin, true, Expr, {valid, null, <<"value">>}),
+    ok = run_valid(bin, false, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, {valid, null, [1, 2]}),
+    ok = run_valid(int_list, false, Expr, invalid),
+    ok = run_valid(bin_list, true, Expr, {valid, null, [<<"value">>, <<"another">>]}),
+    ok = run_valid(bin_list, false, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, {valid, null, 1}),
+    ok = run_valid(int_enum, false, Expr, invalid),
+    ok.
 
-% valid_empty_test() ->
-%     Expr = <<"var = 1">>,
-%     ok = run_valid(int, true, Expr, invalid),
-%     ok = run_valid(float, true, Expr, invalid),
-%     ok = run_valid(bool, true, Expr, invalid),
-%     ok = run_valid(bin, true, Expr, invalid),
-%     ok = run_valid(int_list, true, Expr, {valid, [], [1,2]}),
-%     ok = run_valid(bin_list, true, Expr, {valid, [], [<<"valud">>, <<"another">>]}),
-%     ok = run_valid(segments, true, Expr, invalid),
-%     ok = run_valid(frequenct_caps, true, Expr, invalid),
-%     ok = run_valid(int_enum, true, Expr, invalid),
-%     ok.
+valid_empty_test() ->
+    Expr = <<"var is empty">>,
+    ok = run_valid(int, true, Expr, invalid),
+    ok = run_valid(float, true, Expr, invalid),
+    ok = run_valid(bool, true, Expr, invalid),
+    ok = run_valid(bin, true, Expr, invalid),
+    ok = run_valid(int_list, true, Expr, {valid, [], [1,2]}),
+    ok = run_valid(bin_list, true, Expr, {valid, [], [<<"valud">>, <<"another">>]}),
+    ok = run_valid(segments, true, Expr, invalid),
+    ok = run_valid(frequency_caps, true, Expr, invalid),
+    ok = run_valid(int_enum, true, Expr, invalid),
+    ok.
