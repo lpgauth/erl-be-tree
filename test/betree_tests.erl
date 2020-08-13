@@ -602,7 +602,7 @@ valid_empty_test() ->
     ok = run_valid(bool, true, Expr, invalid),
     ok = run_valid(bin, true, Expr, invalid),
     ok = run_valid(int_list, true, Expr, {valid, [], [1,2]}),
-    ok = run_valid(bin_list, true, Expr, {valid, [], [<<"valud">>, <<"another">>]}),
+    ok = run_valid(bin_list, true, Expr, {valid, [], [<<"value">>, <<"another">>]}),
     ok = run_valid(segments, true, Expr, invalid),
     ok = run_valid(frequency_caps, true, Expr, invalid),
     ok = run_valid(int_enum, true, Expr, invalid),
