@@ -764,7 +764,6 @@ static bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_e
             case BETREE_INTEGER_ENUM:
                 result = get_int(env, element, def.name, &variable);
                 break;
-            case BETREE_INTEGER_LIST_ENUM:
             default: 
                 result = false; 
                 break;
