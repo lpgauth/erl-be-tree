@@ -133,7 +133,7 @@ static struct sub* get_sub(ErlNifEnv* env, const ERL_NIF_TERM term)
 static char *alloc_string(ErlNifBinary bin)
 {
     size_t key_len = bin.size;
-    char *key = enif_alloc((key_len + 1) * sizeof(*key));
+    char *key = malloc((key_len + 1) * sizeof(*key));
     if (!key) {
         return NULL;
     }
@@ -338,7 +338,7 @@ static ERL_NIF_TERM nif_betree_make_sub(ErlNifEnv* env, int argc, const ERL_NIF_
         goto cleanup;
     }
 
-    constants = enif_alloc(length * sizeof(*constants));
+    constants = malloc(length * sizeof(*constants));
     constant_count = length;
     for (unsigned int i = 0; i < length; i++) {
         constants[i] = NULL;
@@ -401,11 +401,11 @@ static ERL_NIF_TERM nif_betree_make_sub(ErlNifEnv* env, int argc, const ERL_NIF_
     retval = enif_make_tuple(env, 2, atom_ok, sub_term);
 cleanup:
     if(expr != NULL) {
-        enif_free(expr);
+        free(expr);
     }
     if(constants != NULL) {
         betree_free_constants(constant_count, constants);
-        enif_free(constants);
+        free(constants);
     }
 
     return retval;
@@ -455,7 +455,7 @@ static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, stru
 
     *variable = betree_make_string_variable(name, value);
 
-    enif_free(value);
+    free(value);
 
     return true;
 }
@@ -530,7 +530,7 @@ static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, st
 
         value = alloc_string(bin);
         betree_add_string(list, i, value);
-        enif_free((char*)value);
+        free((char*)value);
     }
 
     *variable = betree_make_string_list_variable(name, list);
@@ -634,10 +634,10 @@ static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_f
     *ptr = frequency_cap;
 cleanup:
     if(type_str != NULL) {
-        enif_free(type_str);
+        free(type_str);
     }
     if(ns_str != NULL) {
-        enif_free(ns_str);
+        free(ns_str);
     }
 
     return success;
