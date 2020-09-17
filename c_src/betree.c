@@ -133,7 +133,7 @@ static struct sub* get_sub(ErlNifEnv* env, const ERL_NIF_TERM term)
 static char *alloc_string(ErlNifBinary bin)
 {
     size_t key_len = bin.size;
-    char *key = enif_alloc((key_len + 1) * sizeof(*key));
+    char *key = malloc((key_len + 1) * sizeof(*key));
     if (!key) {
         return NULL;
     }
@@ -338,7 +338,7 @@ static ERL_NIF_TERM nif_betree_make_sub(ErlNifEnv* env, int argc, const ERL_NIF_
         goto cleanup;
     }
 
-    constants = enif_alloc(length * sizeof(*constants));
+    constants = malloc(length * sizeof(*constants));
     constant_count = length;
     for (unsigned int i = 0; i < length; i++) {
         constants[i] = NULL;

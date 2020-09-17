@@ -3,8 +3,7 @@
 set -x
 
 if [ ! -d "be-tree" ]; then
-    git clone -b 'v1.0.3' --single-branch --depth 1 http://github.com/FrankBro/be-tree
+    git clone -b 'dirty' --single-branch --depth 1 http://github.com/lpgauth/be-tree
     cd be-tree
     make NIF=true
 fi
-
