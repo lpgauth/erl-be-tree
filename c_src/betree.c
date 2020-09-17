@@ -460,7 +460,7 @@ static bool get_binary(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, stru
     return true;
 }
 
-static bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+static bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     (void)env;
     bool value = false;
@@ -479,7 +479,7 @@ static bool get_boolean(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, str
     return true;
 }
 
-static bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+static bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     int64_t value;
     if(!enif_get_int64(env, term, &value)) {
@@ -491,7 +491,7 @@ static bool get_int(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct 
     return true;
 }
 
-static bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+static bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     double value;
     if(!enif_get_double(env, term, &value)) {
@@ -503,7 +503,7 @@ static bool get_float(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struc
     return true;
 }
 
-static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+static bool get_bin_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -569,7 +569,7 @@ static bool get_int_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, st
     return true;
 }
 
-static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_frequency_cap **ptr) 
+static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_frequency_cap **ptr)
 {
     int cap_arity;
     int key_arity;
@@ -639,7 +639,7 @@ cleanup:
     return success;
 }
 
-static bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+static bool get_frequency_caps_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -693,7 +693,7 @@ static bool get_segment(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_segment
     return true;
 }
 
-static bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable) 
+static bool get_segments_list(ErlNifEnv* env, ERL_NIF_TERM term, const char* name, struct betree_variable** variable)
 {
     ERL_NIF_TERM head;
     ERL_NIF_TERM tail = term;
@@ -737,8 +737,8 @@ static bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_e
         bool result;
         struct betree_variable* variable = NULL;
         switch(def.type) {
-            case BETREE_BOOLEAN: 
-                result = get_boolean(env, element, def.name, &variable); 
+            case BETREE_BOOLEAN:
+                result = get_boolean(env, element, def.name, &variable);
                 break;
             case BETREE_INTEGER:
                 result = get_int(env, element, def.name, &variable);
@@ -764,8 +764,8 @@ static bool add_variables(ErlNifEnv* env, struct betree* betree, struct betree_e
             case BETREE_INTEGER_ENUM:
                 result = get_int(env, element, def.name, &variable);
                 break;
-            default: 
-                result = false; 
+            default:
+                result = false;
                 break;
         }
         if(result == false) {
@@ -944,9 +944,8 @@ static ErlNifFunc nif_functions[] = {
     {"betree_make_sub", 4, nif_betree_make_sub, 0},
     {"betree_insert_sub", 2, nif_betree_insert_sub, 0},
     {"betree_exists", 2, nif_betree_exists, 0},
-    {"betree_search", 2, nif_betree_search, 0}
+    {"betree_search", 2, nif_betree_search, ERL_NIF_DIRTY_JOB_CPU_BOUND}
     /*{"betree_delete", 2, nif_betree_delete, 0}*/
 };
 
 ERL_NIF_INIT(erl_betree_nif, nif_functions, &load, NULL, NULL, NULL);
-
