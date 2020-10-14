@@ -2,6 +2,23 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
+-record(freq_test, {freq, now}).
+freq_test() ->
+    Domains = [[
+        {frequency_caps, frequency_caps, disallow_undefined},
+        {now, int64, disallow_undefined}
+        ]],
+     Consts = [{flight_id, 10},
+               {advertiser_id, 20},
+               {campaign_id, 30},
+               {product_id, 40},
+               {unknown, 50}],
+    Expr = <<"within_frequency_cap(\"invalid\", \"ns\", 0, 0)">>,
+    {ok, Betree} = erl_betree:betree_make(Domains),
+    ?assertError(undef, erb_betree:betree_make_sub(Betree, 1, Consts, Expr)),
+    Event = [#freq_test{freq = [{{<<"secret">>, 0, <<"ns">>}, 0, undefined}], now = 0}],
+    ?assertError(badarg, erl_betree:betree_search(Betree, Event)).
+
 -record(iolist_test, { a, b, c }).
 iolist_test() ->
     Domains = [[{a, int, disallow_undefined}, {b, int, disallow_undefined}, {c, int, disallow_undefined}]],
