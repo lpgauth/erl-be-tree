@@ -626,8 +626,12 @@ static bool get_frequency_cap(ErlNifEnv* env, ERL_NIF_TERM term, struct betree_f
         success = false;
         goto cleanup;
     }
-
-    *ptr = betree_make_frequency_cap(type_str, id, ns_str, timestamp_defined, timestamp, value);
+    struct betree_frequency_cap* frequency_cap = betree_make_frequency_cap(type_str, id, ns_str, timestamp_defined, timestamp, value);
+    if(frequency_cap == NULL) {
+        success = false;
+        goto cleanup;
+    }
+    *ptr = frequency_cap;
 cleanup:
     if(type_str != NULL) {
         enif_free(type_str);
